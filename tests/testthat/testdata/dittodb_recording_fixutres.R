@@ -61,3 +61,150 @@ source("tests/testthat/helper-connection.R")
 # print(t_result)
 #
 # stop_db_capturing()
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# # Just capture one insert
+# df <- data.frame(
+#   code = "TEST01",
+#   name = "Test Table",
+#   source_id = 1L,
+#   url = "http://example.com",
+#   notes = jsonlite::toJSON(list(note = "test note")),
+#   keep_vintage = TRUE,
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_table_table(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   table_id = 174L,
+#   dimension = "time",
+#   is_time = TRUE
+# )
+# result <- insert_new_table_dimensions(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   tab_dim_id = 267L,
+#   level_value = "SI",
+#   level_text = "Slovenia",
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_dimension_levels(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   name = "meters",
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_unit(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   table_id = 174,
+#   name_long = "Monthly GDP",
+#   unit_id = 1L,
+#   code = "GDP_M",
+#   interval_id = "M",
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_series(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   series_id = 42785L,
+#   tab_dim_id = 267L,
+#   level_value = "SI",
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_series_levels(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   id = 5L,
+#   name = "SURSi",
+#   name_long = "Statistical Office",
+#   url = "http://www.stat.si",
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_source(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   id = 999L,
+#   name = "Economic Statistics",
+#   source_id = 1L,
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_category(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   id = 999L,          # child category
+#   parent_id = 57L,   # parent category
+#   source_id = 1L,
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_category_relationship(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   category_id = 1L,
+#   table_id = 191L,
+#   source_id = 5L,
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_category_table(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()

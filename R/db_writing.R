@@ -1,9 +1,10 @@
-#' Insert a new row into the table table
+#' Insert a new table into the database
 #'
 #' @description
-#' Inserts a new row into the platform.table table using the insert_new_table SQL function.
-#' The function prevents duplicate insertions using ON CONFLICT DO NOTHING.
+#' Inserts a new row into the table table. If a table with the same code already exists,
+#' the function will not insert a duplicate and will return 0.
 #'
+#' @param con Database connection object
 #' @param df A data frame with one row containing the following columns:
 #'   * code (character): unique identifier code for the table
 #'   * name (character): name/description of the table
@@ -11,8 +12,10 @@
 #'   * url (character, optional): URL where the table data can be found
 #'   * notes (character/json, optional): Additional notes in JSON format
 #'   * keep_vintage (logical): Whether to keep historical versions of the table
-#' @inheritParams common_parameters
-#' @return A data frame with one column 'count' indicating number of rows inserted (1 for success, 0 for duplicate)
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if table with same code already exists)
 #'
 #' @examples
 #' \dontrun{
@@ -24,7 +27,7 @@
 #'   notes = jsonlite::toJSON(list(frequency = "quarterly")),
 #'   keep_vintage = TRUE
 #' )
-#' insert_new_table_table(df)
+#' insert_new_table_table(con, df)
 #' }
 #'
 #' @export
@@ -32,61 +35,304 @@ insert_new_table_table <- function(con, df, schema = "platform") {
   sql_function_call(con, "insert_new_table", as.list(df), schema)
 }
 
-
-
-
-#' #' Insert table structure data for a new table
-#' #'
-#' #' When a new table (in SURS speak 'matrix") is added, a set of nine
-#' #' tables need to be populated with appropriate metadata about that table.
-#' #' This umbrella function calls the respective SQL functions for each
-#' #' of the nine tables.
-#' #'
-#' #' @inheritParams common_parameters
-#' #' @param full full field hierarchy with parent_ids et al, output from
-#' #'  \link[SURSfetchR]{get_full_structure}
-#' #' @param schema default schema
-#' #' @param keep_vintage boolean whether to keep vintages
-#' #'
-#' #' @return list of tables with counts for each inserted row.
-#' #' @export
-#' #'
-#' #' @examples
-#' #' \dontrun{
-#' #' purrr::walk(master_list_surs$code, ~insert_new_table_structures(.x, con, full))
-#' #' }
-#' insert_new_table_structures <- function(code_no, con, full, schema = "platform", keep_vintage = FALSE) {
-#'   res <- list()
-#'   res[[1]] <- sql_function_call(con,
-#'                                 "insert_new_table",
-#'                                 as.list(prepare_table_table(code_no, keep_vintage)), schema = schema)
-#'   res[[2]] <- sql_function_call(con,
-#'                                 "insert_new_category",
-#'                                 as.list(prepare_category_table(code_no, full)), schema = schema)
-#'   res[[3]] <- sql_function_call(con,
-#'                                 "insert_new_category_relationship",
-#'                                 as.list(prepare_category_relationship_table(code_no, full)), schema = schema)
+#' Insert a new dimension for a table
 #'
-#'   res[[4]] <- sql_function_call(con,
-#'                                 "insert_new_category_table",
-#'                                 as.list(prepare_category_table_table(code_no, full, con)), schema = schema)
-#'   res[[5]] <- sql_function_call(con,
-#'                                 "insert_new_table_dimensions",
-#'                                 as.list(prepare_table_dimensions_table(code_no, con)), schema = schema)
-#'   res[[6]] <- sql_function_call(con,
-#'                                 "insert_new_dimension_levels",
-#'                                 as.list(prepare_dimension_levels_table(code_no, con)), schema = schema)
-#'   res[[7]] <- sql_function_call(con,
-#'                                 "insert_new_unit",
-#'                                 unname(as.list(prepare_unit_table(code_no, con))), schema = schema)
-#'   res[[8]] <-  sql_function_call(con,
-#'                                  "insert_new_series",
-#'                                  unname(as.list(prepare_series_table(code_no, con))), schema = schema)
-#'   res[[9]] <- sql_function_call(con,
-#'                                 "insert_new_series_levels",
-#'                                 unname(as.list(prepare_series_levels_table(code_no, con))), schema = schema)
-#'   res
+#' @description
+#' Inserts a new dimension into the table_dimensions table. If the dimension
+#' already exists for this table, the function will not insert a duplicate
+#' and will return 0.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * table_id (integer): ID of the table this dimension belongs to
+#'   * dimension (character): name of the dimension
+#'   * is_time (logical): whether this is a time dimension
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if dimension already exists for this table)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   table_id = 1,
+#'   dimension = "time",
+#'   is_time = TRUE
+#' )
+#' insert_new_table_dimensions(con, df)
 #' }
+#'
+#' @export
+insert_new_table_dimensions <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_table_dimensions", as.list(df), schema)
+}
+
+#' Insert a new dimension level
+#'
+#' @description
+#' Inserts a new level into the dimension_levels table. If the level value
+#' already exists for this dimension, the function will not insert a duplicate
+#' and will return 0.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * tab_dim_id (integer): ID of the table dimension this level belongs to
+#'   * level_value (character): code or value for this level
+#'   * level_text (character): descriptive text for this level (can be NULL)
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if level value already exists for this dimension)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   tab_dim_id = 1,
+#'   level_value = "SI",
+#'   level_text = "Slovenia"
+#' )
+#' insert_new_dimension_levels(con, df)
+#' }
+#'
+#' @export
+insert_new_dimension_levels <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_dimension_levels", as.list(df), schema)
+}
+
+
+#' Insert a new unit
+#'
+#' @description
+#' Inserts a new unit into the unit table. If a unit with the same name
+#' already exists, the function will not insert a duplicate and will return 0.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * name (character): Name of the unit
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if unit with same name already exists)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   name = "meters"
+#' )
+#' insert_new_unit(con, df)
+#' }
+#'
+#' @export
+insert_new_unit <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_unit", as.list(df), schema)
+}
+
+#' Insert a new series
+#'
+#' @description
+#' Inserts a new series into the series table. If a series with the same code
+#' already exists for the same table, the function will not insert a duplicate
+#' and will return 0.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * table_id (integer): ID of the table this series belongs to
+#'   * name_long (character): Long name/description of the series
+#'   * unit_id (integer): ID of the unit for this series
+#'   * code (character): Unique code within the table
+#'   * interval_id (character): Frequency identifier (e.g., "M" for monthly, "A" for annual)
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if series with same code already exists for this table)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   table_id = 1,
+#'   name_long = "Monthly GDP",
+#'   unit_id = 1,
+#'   code = "GDP_M",
+#'   interval_id = "M"
+#' )
+#' insert_new_series(con, df)
+#' }
+#'
+#' @export
+insert_new_series <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_series", as.list(df), schema)
+}
+
+#' Insert a new series level
+#'
+#' @description
+#' Inserts a new series level into the series_levels table. If the combination
+#' of series_id and tab_dim_id already exists, the function will not insert
+#' a duplicate and will return 0. The level_value must exist in the corresponding
+#' dimension_levels table.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * series_id (integer): ID of the series
+#'   * tab_dim_id (integer): ID of the table dimension
+#'   * level_value (character): Value that must exist in dimension_levels
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if combination already exists)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   series_id = 1,
+#'   tab_dim_id = 1,
+#'   level_value = "SI"
+#' )
+#' insert_new_series_levels(con, df)
+#' }
+#'
+#' @export
+insert_new_series_levels <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_series_levels", as.list(df), schema)
+}
+
+
+
+
+#' Insert a new source
+#'
+#' @description
+#' Inserts a new data source into the source table. Sources must have unique
+#' IDs and names. The name cannot contain dashes.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * id (integer): Source identifier (primary key)
+#'   * name (character): Short name of the source, must be unique and cannot contain dashes
+#'   * name_long (character, optional): Full name of the source
+#'   * url (character, optional): URL of the source
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if source with same id or name already exists)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   id = 1,
+#'   name = "SURS",
+#'   name_long = "Statistical Office",
+#'   url = "http://www.stat.si"
+#' )
+#' insert_new_source(con, df)
+#' }
+#'
+#' @export
+insert_new_source <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_source", as.list(df), schema)
+}
+
+#' Insert a new category
+#'
+#' @description
+#' Inserts a new category into the category table. Categories are unique per source,
+#' identified by both id and name.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * id (integer): Category identifier (unique within source_id)
+#'   * name (character): Category name (unique within source_id)
+#'   * source_id (integer): ID of the source this category belongs to
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if category already exists for this source)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   id = 1,
+#'   name = "Economic Statistics",
+#'   source_id = 1
+#' )
+#' insert_new_category(con, df)
+#' }
+#'
+#' @export
+insert_new_category <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_category", as.list(df), schema)
+}
+
+
+#' Insert a new category relationship
+#'
+#' @description
+#' Creates a parent-child relationship between two categories within the same source.
+#' The relationship is defined by specifying which category is the child (id) and
+#' which is the parent (parent_id).
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * id (integer): ID of the child category
+#'   * parent_id (integer): ID of the parent category
+#'   * source_id (integer): ID of the source these categories belong to
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if relationship already exists)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   id = 2,         # child category
+#'   parent_id = 1,  # parent category
+#'   source_id = 1
+#' )
+#' insert_new_category_relationship(con, df)
+#' }
+#'
+#' @export
+insert_new_category_relationship <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_category_relationship", as.list(df), schema)
+}
+
+#' Insert a new category-table link
+#'
+#' @description
+#' Links a table to a category within the same source. A table can be linked
+#' to multiple categories.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * category_id (integer): ID of the category
+#'   * table_id (integer): ID of the table
+#'   * source_id (integer): ID of the source these both belong to
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if link already exists)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   category_id = 1,
+#'   table_id = 1,
+#'   source_id = 1
+#' )
+#' insert_new_category_table(con, df)
+#' }
+#'
+#' @export
+insert_new_category_table <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_category_table", as.list(df), schema)
+}
+
+
+
+
+
+
+
 #'
 #'
 #' #' Insert new data for a table i.e. a vintage

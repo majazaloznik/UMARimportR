@@ -12,6 +12,7 @@ LazyData: true
 Suggests: 
     covr (>= 3.6.4),
     dittodb,
+    jsonlite,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2

@@ -2,12 +2,12 @@
 % Please edit documentation in R/db_writing.R
 \name{insert_new_table_table}
 \alias{insert_new_table_table}
-\title{Insert a new row into the table table}
+\title{Insert a new table into the database}
 \usage{
 insert_new_table_table(con, df, schema = "platform")
 }
 \arguments{
-\item{con}{PostgreSQL connection object created by the RPostgres package.}
+\item{con}{Database connection object}
 
 \item{df}{A data frame with one row containing the following columns:
 * code (character): unique identifier code for the table
@@ -17,14 +17,15 @@ insert_new_table_table(con, df, schema = "platform")
 * notes (character/json, optional): Additional notes in JSON format
 * keep_vintage (logical): Whether to keep historical versions of the table}
 
-\item{schema}{character schema name, default is "platform"}
+\item{schema}{Character string specifying the database schema. Defaults to "platform"}
 }
 \value{
-A data frame with one column 'count' indicating number of rows inserted (1 for success, 0 for duplicate)
+A data frame with one column 'count' indicating number of rows inserted
+        (1 for success, 0 if table with same code already exists)
 }
 \description{
-Inserts a new row into the platform.table table using the insert_new_table SQL function.
-The function prevents duplicate insertions using ON CONFLICT DO NOTHING.
+Inserts a new row into the table table. If a table with the same code already exists,
+the function will not insert a duplicate and will return 0.
 }
 \examples{
 \dontrun{
@@ -36,7 +37,7 @@ df <- data.frame(
   notes = jsonlite::toJSON(list(frequency = "quarterly")),
   keep_vintage = TRUE
 )
-insert_new_table_table(df)
+insert_new_table_table(con, df)
 }
 
 }
