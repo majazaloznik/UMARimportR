@@ -16,7 +16,6 @@
 #'
 #' @return value of `dbGetQuery(con, "SELECT * FROM schema.fun_name($args)")$fun_name`
 #' @importFrom RPostgres Postgres
-
 sql_function_call <- function(con, fun_name, args, schema = "platform") {
   args_pattern <- ""
   if(!is.null(args)) {
@@ -44,10 +43,14 @@ sql_function_call <- function(con, fun_name, args, schema = "platform") {
     paste(names(args), param_values, collapse = ",")
   )
 
+  # Fixed the order of arguments in dbQuoteIdentifier
+  schema_quoted <- DBI::dbQuoteIdentifier(con, schema)
+  fun_name_quoted <- DBI::dbQuoteIdentifier(con, fun_name)
+
   query <- sprintf("%s SELECT * FROM %s.%s(%s)",
                    param_comment,
-                   DBI::dbQuoteIdentifier(con, schema),
-                   DBI::dbQuoteIdentifier(con, fun_name),
+                   schema_quoted,
+                   fun_name_quoted,
                    args_pattern)
 
   res <- DBI::dbGetQuery(con, query, unname(args))
