@@ -17,10 +17,7 @@
 #' @return value of `dbGetQuery(con, "SELECT * FROM schema.fun_name($args)")$fun_name`
 #' @importFrom RPostgres Postgres
 
-sql_function_call <- function(con,
-                              fun_name,
-                              args,
-                              schema = "platform") {
+sql_function_call <- function(con, fun_name, args, schema = "platform") {
   args_pattern <- ""
   if(!is.null(args)) {
     args[sapply(args, is.null)] <- NA
@@ -36,11 +33,15 @@ sql_function_call <- function(con,
   }
 
   # Add comment with args for unique hashing
-  param_comment <- paste(
-    sprintf("/* Params: %s */",
-            paste(names(args), unname(sapply(args, as.character)),
-                  collapse = ",")),
-    collapse = ""
+  param_values <- sapply(args, function(x) {
+    if (inherits(x, "integer64")) return(as.numeric(x))
+    if (inherits(x, "POSIXct")) return(format(x))
+    x
+  })
+
+  param_comment <- sprintf(
+    "/* Params: %s */",
+    paste(names(args), param_values, collapse = ",")
   )
 
   query <- sprintf("%s SELECT * FROM %s.%s(%s)",
@@ -50,6 +51,5 @@ sql_function_call <- function(con,
                    args_pattern)
 
   res <- DBI::dbGetQuery(con, query, unname(args))
-
   res
 }
