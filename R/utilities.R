@@ -1,7 +1,10 @@
 #' Construct and execute an SQL function call
 #'
 #' Constructs the call for the funciton `schema`.`fun_name` from the database
-#' with the arguments `args` and returns the result.
+#' with the arguments `args` and returns the result. Because of the way
+#' the parameters get apssed the hash of the query remains the same which is
+#' a bitch for testing with mock fixtures using dittodb. So we added a comment
+#' to the query, just to ensure the hash is different.
 #'
 #' Inspiration from `timeseriesdb` package by Matt Bannert.
 #'
@@ -32,7 +35,16 @@ sql_function_call <- function(con,
     args_pattern <- paste(args_pattern, collapse = ", ")
   }
 
-  query <- sprintf("SELECT * FROM %s.%s(%s)",
+  # Add comment with args for unique hashing
+  param_comment <- paste(
+    sprintf("/* Params: %s */",
+            paste(names(args), unname(sapply(args, as.character)),
+                  collapse = ",")),
+    collapse = ""
+  )
+
+  query <- sprintf("%s SELECT * FROM %s.%s(%s)",
+                   param_comment,
                    DBI::dbQuoteIdentifier(con, schema),
                    DBI::dbQuoteIdentifier(con, fun_name),
                    args_pattern)

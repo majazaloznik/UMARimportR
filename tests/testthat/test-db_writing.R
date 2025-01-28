@@ -47,7 +47,7 @@ test_that("insert_new_dimension_levels works correctly", {
     con <- make_test_connection()
 
     df <- data.frame(
-      tab_dim_id = 1L,
+      tab_dim_id = 267L,
       level_value = "SI",
       level_text = "Slovenia",
       stringsAsFactors = FALSE
@@ -204,6 +204,26 @@ test_that("insert_new_category_table works correctly", {
     )
 
     result <- insert_new_category_table(con, df, schema = "test_platform")
+    expect_s3_class(result, "data.frame")
+    expect_equal(names(result), "count")
+    expect_type(result$count, "integer")
+    expect_true(result$count %in% c(0,1))
+
+    dbDisconnect(con)
+  })
+})
+
+test_that("insert_new_vintage works correctly", {
+  with_mock_db({
+    con <- make_test_connection()
+
+    df <- data.frame(
+      series_id = 1917L,
+      published = as.POSIXct("2024-01-01 10:00:00"),
+      stringsAsFactors = FALSE
+    )
+
+    result <- insert_new_vintage(con, df, schema = "test_platform")
     expect_s3_class(result, "data.frame")
     expect_equal(names(result), "count")
     expect_type(result$count, "integer")

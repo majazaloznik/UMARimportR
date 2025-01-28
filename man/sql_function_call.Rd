@@ -20,7 +20,10 @@ value of `dbGetQuery(con, "SELECT * FROM schema.fun_name($args)")$fun_name`
 }
 \description{
 Constructs the call for the funciton `schema`.`fun_name` from the database
-with the arguments `args` and returns the result.
+with the arguments `args` and returns the result. Because of the way
+the parameters get apssed the hash of the query remains the same which is
+a bitch for testing with mock fixtures using dittodb. So we added a comment
+to the query, just to ensure the hash is different.
 }
 \details{
 Inspiration from `timeseriesdb` package by Matt Bannert.

@@ -2,7 +2,7 @@ test_that("delete_vintage returns correct structure", {
   with_mock_db({
     con <- make_test_connection()
 
-    result <- delete_vintage(con, 1, schema = "test_platform")
+    result <- delete_vintage(con, 6396, schema = "test_platform")
 
     expect_s3_class(result, "data.frame")
     expect_equal(names(result), c("vintage_count", "data_points_count", "flag_count"))
@@ -19,7 +19,7 @@ test_that("delete_series returns correct structure", {
   with_mock_db({
     con <- make_test_connection()
 
-    result <- delete_series(con, 1, schema = "test_platform")
+    result <- delete_series(con, 5802, schema = "test_platform")
 
     expect_s3_class(result, "data.frame")
     expect_equal(names(result),
@@ -40,7 +40,7 @@ test_that("delete_table returns correct structure", {
   with_mock_db({
     con <- make_test_connection()
 
-    result <- delete_table(con, 1, schema = "test_platform")
+    result <- delete_table(con, 22, schema = "test_platform")
 
     expect_s3_class(result, "data.frame")
     expect_equal(names(result),

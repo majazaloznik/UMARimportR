@@ -7,6 +7,8 @@
 \item{con}{PostgreSQL connection object created by the RPostgres package.}
 
 \item{schema}{character schema name, default is "platform"}
+
+\item{code_no}{character table code}
 }
 \description{
 Parameter definitions for common parameters

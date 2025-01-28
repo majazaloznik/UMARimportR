@@ -329,10 +329,123 @@ insert_new_category_table <- function(con, df, schema = "platform") {
 
 
 
+#' Insert new data for a table i.e. a vintage
+#'
+#' When new data for a table (in SURS speak 'matrix") is added, these are new
+#' vintages. This function adds a set of new vintages and their corresponding
+#' data points and flags to the database, by calling the respective SQL functions
+#' for each of these tables.
+#'
+#' @inheritParams common_parameters
+#'
+#' @return list of tables with counts for each inserted row.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' purrr::walk(master_list_surs$code, ~insert_new_data(.x, con))
+#' }
+insert_new_data <- function(code_no, con, schema = "platform") {
+  res <- list()
+  res[[1]] <- sql_function_call(con,
+                                "insert_new_vintage",
+                                unname(as.list(prepare_vintage_table(code_no ,con))),
+                                schema = schema)
+  print(paste(sum(res[[1]]), "new rows inserted into the vintage table"))
+  tryCatch(
+    {insert_data_points(code_no, con, schema = schema)},
+    error = function(cond){
+      message(paste("The data was not inserted for SURS table", code_no))
+      message("Here's the original error message:")
+      message(conditionMessage(cond))
+      # Choose a return value in case of error
+      NA
+    }
+  )
 
+}
 
+#' Insert a new vintage
+#'
+#' @description
+#' Creates a new vintage (version) of a series with a specific publication timestamp.
+#' Each series can have multiple vintages with different timestamps.
+#'
+#' @param con Database connection object
+#' @param df A data frame with one row containing the following columns:
+#'   * series_id (integer): ID of the series this vintage belongs to
+#'   * published (POSIXct): Timestamp when this vintage was published
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @return A data frame with one column 'count' indicating number of rows inserted
+#'         (1 for success, 0 if vintage with same timestamp already exists for this series)
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   series_id = 1,
+#'   published = as.POSIXct("2024-01-01 10:00:00")
+#' )
+#' insert_new_vintage(con, df)
+#' }
+#'
+#' @export
+insert_new_vintage <- function(con, df, schema = "platform") {
+  sql_function_call(con, "insert_new_vintage", as.list(df), schema)
+}
 
-
+#' #' Insert table structure data for a new table
+#' #'
+#' #' When a new table (in SURS speak 'matrix") is added, a set of nine
+#' #' tables need to be populated with appropriate metadata about that table.
+#' #' This umbrella function calls the respective SQL functions for each
+#' #' of the nine tables.
+#' #'
+#' #' @inheritParams common_parameters
+#' #' @param full full field hierarchy with parent_ids et al, output from
+#' #'  \link[SURSfetchR]{get_full_structure}
+#' #' @param schema default schema
+#' #' @param keep_vintage boolean whether to keep vintages
+#' #'
+#' #' @return list of tables with counts for each inserted row.
+#' #' @export
+#' #'
+#' #' @examples
+#' #' \dontrun{
+#' #' purrr::walk(master_list_surs$code, ~insert_new_table_structures(.x, con, full))
+#' #' }
+#' insert_new_table_structures <- function(code_no, con, full, schema = "platform", keep_vintage = FALSE) {
+#'   res <- list()
+#'   res[[1]] <- sql_function_call(con,
+#'                                 "insert_new_table",
+#'                                 as.list(prepare_table_table(code_no, keep_vintage)), schema = schema)
+#'   res[[2]] <- sql_function_call(con,
+#'                                 "insert_new_category",
+#'                                 as.list(prepare_category_table(code_no, full)), schema = schema)
+#'   res[[3]] <- sql_function_call(con,
+#'                                 "insert_new_category_relationship",
+#'                                 as.list(prepare_category_relationship_table(code_no, full)), schema = schema)
+#'
+#'   res[[4]] <- sql_function_call(con,
+#'                                 "insert_new_category_table",
+#'                                 as.list(prepare_category_table_table(code_no, full, con)), schema = schema)
+#'   res[[5]] <- sql_function_call(con,
+#'                                 "insert_new_table_dimensions",
+#'                                 as.list(prepare_table_dimensions_table(code_no, con)), schema = schema)
+#'   res[[6]] <- sql_function_call(con,
+#'                                 "insert_new_dimension_levels",
+#'                                 as.list(prepare_dimension_levels_table(code_no, con)), schema = schema)
+#'   res[[7]] <- sql_function_call(con,
+#'                                 "insert_new_unit",
+#'                                 unname(as.list(prepare_unit_table(code_no, con))), schema = schema)
+#'   res[[8]] <-  sql_function_call(con,
+#'                                  "insert_new_series",
+#'                                  unname(as.list(prepare_series_table(code_no, con))), schema = schema)
+#'   res[[9]] <- sql_function_call(con,
+#'                                 "insert_new_series_levels",
+#'                                 unname(as.list(prepare_series_levels_table(code_no, con))), schema = schema)
+#'   res
+#' }
 #'
 #'
 #' #' Insert new data for a table i.e. a vintage
@@ -398,7 +511,7 @@ insert_new_category_table <- function(con, df, schema = "platform") {
 #' #'
 #' insert_data_points <- function(code_no, con, schema = "platform"){
 #'   on.exit(DBI::dbExecute(con, sprintf("drop table tmp")))
-#'   df <- prepare_data_table(code_no, con)
+#'   df <- prepare_data_table(code_no, con, schema)
 #'   # THIS TAKES OUT NON ASCII CHARACTERS
 #'   names(df) <- gsub("[^\x01-\x7F]+", "", names(df))
 #'   DBI::dbWriteTable(con,
@@ -407,10 +520,10 @@ insert_new_category_table <- function(con, df, schema = "platform") {
 #'                     temporary = TRUE,
 #'                     overwrite = TRUE)
 #'
-#'   tbl_id <- get_table_id(code_no, con)
+#'   tbl_id <- UMARaccessR::sql_get_table_id_from_table_code(con, code_no, schema = schema)
 #'   dim_id <- DBI::dbGetQuery(con,
 #'                             sprintf("SELECT id FROM %s.table_dimensions where
-#'            table_id = %s and is_time is not true",schema, bit64::as.integer64(tbl_id)))
+#'            table_id = %s and is_time is not true",schema, tbl_id))
 #'   dim_id_str <- toString(sprintf("%s", bit64::as.integer64(dim_id$id)))
 #'   tbl_dims <- DBI::dbGetQuery(con,
 #'                               sprintf("SELECT replace(dimension, ' ', '.') as dimension
@@ -420,7 +533,7 @@ insert_new_category_table <- function(con, df, schema = "platform") {
 #'                                       schema, dim_id_str))
 #'   tbl_dims_str_w_types <- toString(paste(sprintf('"%s"', make.names(tbl_dims$dimension)), "text"))
 #'   tbl_dims_str <- toString(paste(sprintf('"%s"', make.names(tbl_dims$dimension))))
-#'   time <- get_time_dimension(code_no, con)
+#'   time <- UMARaccessR::sql_get_time_dimension_from_table_code(code_no, con, schema)
 #'   interval_id <- get_interval_id(time)
 #'   # prepares the tmp table with data_points with correct series id-s
 #'   series_levels_wide <- DBI::dbExecute(con,
@@ -428,7 +541,7 @@ insert_new_category_table <- function(con, df, schema = "platform") {
 #'                                     select * from new_data_points
 #'                                     left join
 #'                                     (select *
-#'                                     from crosstab(
+#'                                     from %s.crosstab(
 #'                                     'SELECT series_id,  j.dimension, level_value
 #'                                     FROM %s.series_levels
 #'                                     left join
@@ -448,6 +561,7 @@ insert_new_category_table <- function(con, df, schema = "platform") {
 #'                                     %s.vintage
 #'                                     order by series_id, published desc) as vinz using (series_id)
 #'                                     ",
+#'                                                schema,
 #'                                                schema,
 #'                                                schema,
 #'                                                dim_id_str,
@@ -530,4 +644,44 @@ insert_new_category_table <- function(con, df, schema = "platform") {
 #'   # insert data  for a single matrix
 #'   out[[2]] <- insert_new_data(code, con)
 #'   out
+#' }
+#'
+#'
+#' #' Add new dimension levels to existing table
+#' #'
+#' #' Sometimes an existing table will get a new category. In that case you want to
+#' #' add the levels, series and series levels separately just for the new series
+#' #' and this function does that. You need to get the code for the new level from
+#' #' Si-Stat
+#' #'
+#' #' @param code surs table code such as 0457102S
+#' #' @param level level code such as 29
+#' #' @param con connection to database
+#' #' @param schema database schema name
+#' #'
+#' #' @return nothing
+#' #' @export
+#' #'
+#' add_new_dimension_levels_full <- function(code, level, con, schema = "platform" ){
+#'   dim_levels <- prepare_dimension_levels_table(code, con)
+#'   dim_level <- dim_levels |>
+#'     dplyr::filter(level_value == level)
+#'   sql_function_call(con,
+#'                     "insert_new_dimension_levels",
+#'                     as.list(dim_level), schema = schema)
+#'
+#'   new_series <- prepare_series_table(code, con)
+#'   new_series <- new_series |>
+#'     dplyr::filter(grepl(paste0("--",level, "--"), series_code))
+#'   sql_function_call(con,
+#'                     "insert_new_series",
+#'                     unname(as.list(new_series)), schema = schema)
+#'
+#'   series_levels <- prepare_series_levels_table(code, con)
+#'   new_series_ids <- purrr::map(new_series$series_code, SURSfetchR:::get_series_id, con = con)
+#'   new_series_levels <- series_levels |>
+#'     dplyr::filter(series_id %in% new_series_ids)
+#'   sql_function_call(con,
+#'                     "insert_new_series_levels",
+#'                     unname(as.list(new_series_levels)), schema = schema)
 #' }

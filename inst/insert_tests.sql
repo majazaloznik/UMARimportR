@@ -729,3 +729,75 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 
 ROLLBACK;
+
+
+--
+
+BEGIN;
+
+DO $$
+DECLARE
+    v_table_id integer;
+    v_series_id integer;
+    v_result integer;
+BEGIN
+    RAISE NOTICE 'Starting insert_new_vintage tests...';
+
+    -- Create prerequisites
+    RAISE NOTICE 'Creating test table and series...';
+
+    -- Create table
+    INSERT INTO test_platform.table (code, name, source_id)
+    VALUES ('TEST_VINT', 'Test Vintage Table', 1)
+    RETURNING id INTO v_table_id;
+
+    -- Create series
+    INSERT INTO test_platform.series (table_id, name_long, code)
+    VALUES (v_table_id, 'Test Series', 'TS01')
+    RETURNING id INTO v_series_id;
+
+    -- Test 1: Basic insert
+    RAISE NOTICE 'Testing basic insert...';
+    SELECT * FROM test_platform.insert_new_vintage(
+        v_series_id,
+        '2024-01-01 10:00:00'
+    ) INTO v_result;
+
+    ASSERT v_result = 1, 'First insert should return 1';
+
+    -- Verify the insert
+    ASSERT EXISTS (
+        SELECT 1 FROM test_platform.vintage
+        WHERE series_id = v_series_id
+        AND published = '2024-01-01 10:00:00'
+    ), 'Vintage should exist after insert';
+    RAISE NOTICE 'Basic insert test passed';
+
+    -- Test 2: Duplicate timestamp for same series
+    RAISE NOTICE 'Testing duplicate timestamp...';
+    SELECT * FROM test_platform.insert_new_vintage(
+        v_series_id,
+        '2024-01-01 10:00:00'  -- same timestamp
+    ) INTO v_result;
+
+    ASSERT v_result = 0, 'Duplicate timestamp should return 0';
+    RAISE NOTICE 'Duplicate timestamp test passed';
+
+    -- Test 3: Different timestamp for same series
+    RAISE NOTICE 'Testing different timestamp...';
+    SELECT * FROM test_platform.insert_new_vintage(
+        v_series_id,
+        '2024-01-01 11:00:00'  -- different timestamp
+    ) INTO v_result;
+
+    ASSERT v_result = 1, 'Different timestamp should return 1';
+    RAISE NOTICE 'Different timestamp test passed';
+
+    RAISE NOTICE 'All tests passed successfully';
+
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Test failed: %', SQLERRM;
+    RAISE;
+END $$;
+
+ROLLBACK;

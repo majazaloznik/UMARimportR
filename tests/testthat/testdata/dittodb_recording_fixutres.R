@@ -25,6 +25,8 @@ source("tests/testthat/helper-connection.R")
 #
 # sql_function_call(con, "filter_data", list(10, "test"), "test_schema")
 # stop_db_capturing()
+
+
 #
 # start_db_capturing()
 # # First insert
@@ -40,7 +42,6 @@ source("tests/testthat/helper-connection.R")
 # )
 # print(insert_new_table_table(con, df1, schema = "test_platform"))
 # stop_db_capturing()
-
 #
 # start_db_capturing()
 # con <- make_test_connection()
@@ -205,6 +206,19 @@ source("tests/testthat/helper-connection.R")
 #   stringsAsFactors = FALSE
 # )
 # result <- insert_new_category_table(con, df, schema = "test_platform")
+# print(result)
+#
+# stop_db_capturing()
+#
+# start_db_capturing()
+# con <- make_test_connection()
+#
+# df <- data.frame(
+#   series_id = 1917L,
+#   published = as.POSIXct("2024-01-01 10:00:00"),
+#   stringsAsFactors = FALSE
+# )
+# result <- insert_new_vintage(con, df, schema = "test_platform")
 # print(result)
 #
 # stop_db_capturing()
