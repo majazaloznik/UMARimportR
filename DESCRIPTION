@@ -13,9 +13,12 @@ Suggests:
     covr (>= 3.6.4),
     dittodb,
     jsonlite,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    mockery
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
 Imports: 
     DBI,
-    RPostgres
+    RPostgres,
+    dplyr, 
+    purrr
