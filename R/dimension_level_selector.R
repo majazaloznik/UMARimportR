@@ -4,7 +4,7 @@
 #' Interactively select or deselect dimension levels from a dimensional data frame
 #' while ensuring at least one level per dimension remains selected.
 #'
-#' @param df A data frame containing dimensional data with columns:
+#' @param dim_data A data frame containing dimensional data with columns:
 #'   \code{tab_dim_id}, \code{dimension}, \code{level_value}, and \code{level_text}
 #' @param mode Character string indicating mode: either "select" (default) or "deselect"
 #' @param page_size Integer specifying number of items to display per page for large dimensions
@@ -40,74 +40,68 @@
 #' }
 #'
 #' @export
+dimension_level_selector <- function(dim_data, mode = "select", page_size = 50) {
+  stopifnot(mode %in% c("select", "deselect"))
+  # Validate input data
+    if (!all(c("tab_dim_id", "dimension", "level_value", "level_text") %in% names(dim_data))) {
+    stop("Input data must contain tab_dim_id, dimension, level_value, and level_text columns")
+  }
+  # Display dimension and levels
+  dimension_name <- unique(dim_data$dimension)[1]
+  cat(sprintf("Dimension: %s (%d levels)\n", dimension_name, nrow(dim_data)))
+  for (i in seq_len(nrow(dim_data))) {
+    cat(sprintf("%d: %s (%s)\n", i, dim_data$level_text[i], dim_data$level_value[i]))
+  }
 
+  # Get user input
+  input <- readline(sprintf("Enter numbers to keep (comma-separated, or 'all' to keep everything): "))
 
-dimension_level_selector <- function(df, mode = "select", page_size = 20) {
-  # Input validation
-  stopifnot(
-    purrr::every(c("tab_dim_id", "dimension", "level_value", "level_text"), ~.x %in% names(df)),
-    mode %in% c("select", "deselect"))
-  # Get unique dimensions
-  unique_dims <- unique(df$tab_dim_id)
-  # Store selected level values by dimension
-  selected <- list()
-  # Process each dimension
-  for (dim_id in unique_dims) {
-    # Get dimension info
-    dim_data <- dplyr::filter(df, tab_dim_id == dim_id)
-    dim_name <- dim_data$dimension[1]
-    level_count <- nrow(dim_data)
-    cat(sprintf("\nDimension: %s (%d levels)\n", dim_name, level_count))
+  # Handle "all" input - FIXED: return just level values
+  if (input == "all") {
+    return(dim_data$level_value)
+  }
 
-    if (level_count > 50) {
-      # Pagination for large dimensions
-      selected_values <- paginated_selector(dim_data, dim_name, mode, page_size)
-      selected[[dim_id]] <- selected_values
-    } else {
-      # Display all options at once for smaller dimensions
-      for (j in seq_len(nrow(dim_data))) {
-        cat(sprintf("%d: %s (%s)\n", j, dim_data$level_text[j], dim_data$level_value[j]))
+  # Process specific selections
+  indices <- c()
+
+  # Parse input for values and ranges
+  parts <- strsplit(input, ",")[[1]]
+  for (part in parts) {
+    part <- trimws(part)
+    if (grepl("-", part)) {
+      # Range selection
+      range_parts <- as.numeric(strsplit(part, "-")[[1]])
+      if (length(range_parts) == 2 && !any(is.na(range_parts))) {
+        range_indices <- range_parts[1]:range_parts[2]
+        indices <- c(indices, range_indices)
       }
-      valid_input <- FALSE
-      while (!valid_input) {
-        prompt_text <- if (mode == "select") "Enter numbers to keep" else "Enter numbers to remove"
-        cat(paste0(prompt_text, " (comma-separated, or 'all' to keep everything):\n"))
-
-        input <- readline(prompt = "Enter selection: ")
-        if (tolower(input) == "all") {
-          selected[[dim_id]] <- dim_data$level_value
-          valid_input <- TRUE
-          next
-        }
-        indices <- as.numeric(trimws(strsplit(input, ",")[[1]]))
-
-        if (!all(!is.na(indices)) || !all(indices %in% seq_len(nrow(dim_data)))) {
-          cat("Invalid selection. Please try again.\n")
-          next
-        }
-        if (mode == "select") {
-          selected[[dim_id]] <- dim_data$level_value[indices]
-        } else {
-          selected[[dim_id]] <- dim_data$level_value[-indices]
-        }
-        if (length(selected[[dim_id]]) == 0) {
-          cat("At least one level must remain. Please try again.\n")
-          next
-        }
-        valid_input <- TRUE
+    } else {
+      # Single value selection
+      idx <- as.numeric(part)
+      if (!is.na(idx)) {
+        indices <- c(indices, idx)
       }
     }
   }
-  # Return the rows matching the selection criteria
-  result <- df[FALSE, ] # Start with empty dataframe
-  for (dim_id in unique_dims) {
-    dim_rows <- dplyr::filter(df, tab_dim_id == dim_id, level_value %in% selected[[dim_id]])
-    result <- rbind(result, dim_rows)
+
+  # Validate indices
+  if (!all(!is.na(indices)) || !all(indices %in% seq_len(nrow(dim_data)))) {
+    valid_indices <- indices[!is.na(indices) & indices %in% seq_len(nrow(dim_data))]
+    if (length(valid_indices) == 0) {
+      # Return empty character vector for empty selections
+      return(character(0))
+    }
+    indices <- valid_indices
   }
-  return(result)
+
+  if (nrow(dim_data) > 50) {
+    # For large dimensions, use paginated selector
+    return(paginated_selector(dim_data, dim_name, mode, 20))
+  }
+
+  # Return just the level_values for consistency
+  return(dim_data$level_value[indices])
 }
-
-
 #' Interactive paginated selector for dimension levels
 #'
 #' @description

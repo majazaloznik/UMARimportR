@@ -4,10 +4,10 @@
 \alias{dimension_level_selector}
 \title{Select or deselect dimension levels interactively}
 \usage{
-dimension_level_selector(df, mode = "select", page_size = 20)
+dimension_level_selector(dim_data, mode = "select", page_size = 50)
 }
 \arguments{
-\item{df}{A data frame containing dimensional data with columns:
+\item{dim_data}{A data frame containing dimensional data with columns:
 \code{tab_dim_id}, \code{dimension}, \code{level_value}, and \code{level_text}}
 
 \item{mode}{Character string indicating mode: either "select" (default) or "deselect"}
