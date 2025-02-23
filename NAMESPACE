@@ -3,7 +3,7 @@
 export(delete_series)
 export(delete_table)
 export(delete_vintage)
-export(dimension_level_selector)
+export(dimension_selector)
 export(insert_new_category)
 export(insert_new_category_relationship)
 export(insert_new_category_table)
