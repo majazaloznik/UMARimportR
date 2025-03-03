@@ -411,21 +411,42 @@ insert_prepared_data_points <- function(prep_data, con, schema = "platform") {
   DBI::dbWriteTable(con, "tmp_prepared_data", prep_data$data, temporary = TRUE, overwrite = TRUE)
   on.exit(DBI::dbExecute(con, "DROP TABLE IF EXISTS tmp_prepared_data"))
 
-  # Map series IDs to the data
-  DBI::dbExecute(con, sprintf(
+  # Build dynamic join conditions for each dimension
+  join_conditions <- sapply(seq_along(prep_data$dimension_names), function(i) {
+    dim_name <- prep_data$dimension_names[i]
+    # Use column name as is from the data frame
+    col_name <- names(prep_data$data)[names(prep_data$data) %in%
+                                        c(dim_name, toupper(dim_name))]
+    if (length(col_name) == 0) {
+      stop("Column not find for dimension: ", dim_name)
+    }
+
+    # Build condition with proper quoting
+    sprintf(
+      "tmp_prepared_data.%s = sl.level_value AND sl.tab_dim_id = %d",
+      DBI::dbQuoteIdentifier(con, col_name[1]),
+      prep_data$dimension_ids[i]
+    )
+  })
+
+  # Join all conditions
+  all_conditions <- paste(join_conditions, collapse = " AND ")
+
+  # Map series IDs to the data using proper conditions
+  sql_query <- sprintf(
     "UPDATE tmp_prepared_data
      SET series_id = s.id
      FROM %s.series s
      JOIN %s.series_levels sl ON s.id = sl.series_id
-     JOIN %s.table_dimensions td ON sl.tab_dim_id = td.id
      WHERE s.table_id = %d
-     AND tmp_prepared_data.%s = sl.level_value",
-    schema, schema, schema,
+     AND %s",
+    schema, schema,
     prep_data$table_id,
-    # Add conditions for each dimension
-    # This part needs customization based on your schema
-    paste(prep_data$dimension_names, collapse = " AND ")
-  ))
+    all_conditions
+  )
+
+  # Execute the update
+  DBI::dbExecute(con, sql_query)
 
   # Call the SQL function to insert data
   result <- UMARimportR::sql_function_call(
