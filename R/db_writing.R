@@ -394,6 +394,59 @@ insert_new_vintage <- function(con, df, schema = "platform") {
   sql_function_call(con, "insert_new_vintage", as.list(df), schema)
 }
 
+
+#' Insert data points into database
+#'
+#' Generic function to insert prepared data points into the database.
+#' Works with data prepared by SURS-specific or other preparation functions.
+#'
+#' @param prep_data A prepared data object from prepare_surs_data_for_insert
+#' @param con Database connection
+#' @param schema Schema name
+#'
+#' @return A data frame with insertion counts
+#' @export
+insert_prepared_data_points <- function(prep_data, con, schema = "platform") {
+  # Create temporary table with the prepared data
+  DBI::dbWriteTable(con, "tmp_prepared_data", prep_data$data, temporary = TRUE, overwrite = TRUE)
+  on.exit(DBI::dbExecute(con, "DROP TABLE IF EXISTS tmp_prepared_data"))
+
+  # Map series IDs to the data
+  DBI::dbExecute(con, sprintf(
+    "UPDATE tmp_prepared_data
+     SET series_id = s.id
+     FROM %s.series s
+     JOIN %s.series_levels sl ON s.id = sl.series_id
+     JOIN %s.table_dimensions td ON sl.tab_dim_id = td.id
+     WHERE s.table_id = %d
+     AND tmp_prepared_data.%s = sl.level_value",
+    schema, schema, schema,
+    prep_data$table_id,
+    # Add conditions for each dimension
+    # This part needs customization based on your schema
+    paste(prep_data$dimension_names, collapse = " AND ")
+  ))
+
+  # Call the SQL function to insert data
+  result <- UMARimportR::sql_function_call(
+    con,
+    "insert_prepared_data_points",
+    list(
+      p_table_id = prep_data$table_id,
+      p_dimension_ids = prep_data$dimension_ids,
+      p_interval_id = prep_data$interval_id
+    ),
+    schema
+  )
+
+  # Show results
+  message("Inserted ", result$periods_inserted, " new periods")
+  message("Inserted ", result$datapoints_inserted, " new data points")
+  message("Inserted ", result$flags_inserted, " new flags")
+
+  invisible(result)
+}
+
 #' #' Insert table structure data for a new table
 #' #'
 #' #' When a new table (in SURS speak 'matrix") is added, a set of nine

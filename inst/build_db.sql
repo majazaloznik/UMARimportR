@@ -225,4 +225,8 @@ ADD COLUMN "update" boolean DEFAULT true NOT NULL;
 ALTER TABLE platform."table"
 ADD COLUMN "keep_vintage" boolean DEFAULT true NOT NULL;
 
+ALTER TABLE platform.vintage
+ADD COLUMN full_hash character varying,
+ADD COLUMN partial_hash character varying;
+
 GRANT ALL ON ALL TABLES IN SCHEMA platform TO maintainer;

@@ -58,3 +58,39 @@ delete_vintage <- function(con, vintage_id, schema = "platform") {
                      "data_points_count", "flag_count")
   result
 }
+
+#' Clean up function for leftover vintages without datapoints
+#'
+#' cleans up vintages without data points. Also cascades to flags.
+#' @param con Database connection object
+#' @param schema Character string specifying the database schema. Defaults to "platform"
+#'
+#' @returns invisibly the deleted vintage ids
+#' @export
+remove_empty_vintages <- function(con, schema = "platform") {
+  # First identify empty vintages
+  query <- sprintf(
+    "SELECT v.id AS vintage_id
+     FROM %s.vintage v
+     LEFT JOIN %s.data_points dp ON v.id = dp.vintage_id
+     GROUP BY v.id
+     HAVING COUNT(dp.period_id) = 0",
+    schema, schema
+  )
+
+  empty_vintages <- DBI::dbGetQuery(con, query)
+  empty_count <- nrow(empty_vintages)
+
+  if(empty_count == 0) {
+    cat("No empty vintages found.\n")
+    return(invisible(NULL))
+  }
+
+  # Delete empty vintages using existing function
+  results <- lapply(empty_vintages$vintage_id, function(vid) {
+    delete_vintage(con, vid, schema)
+  })
+
+  cat(sprintf("Removed %d empty vintages.\n", empty_count))
+  return(invisible(empty_vintages$vintage_id))
+}

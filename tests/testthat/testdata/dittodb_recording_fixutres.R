@@ -25,7 +25,7 @@ source("tests/testthat/helper-connection.R")
 #
 # sql_function_call(con, "filter_data", list(10, "test"), "test_schema")
 # stop_db_capturing()
-
+#
 
 #
 # start_db_capturing()
@@ -47,17 +47,17 @@ source("tests/testthat/helper-connection.R")
 # con <- make_test_connection()
 #
 # # Test vintage deletion
-# v_result <- delete_vintage(con, 6396, schema = "test_platform")
+# v_result <- delete_vintage(con, 6397, schema = "test_platform")
 # print("Vintage deletion result:")
 # print(v_result)
 #
 # # Test series deletion
-# s_result <- delete_series(con, 5802, schema = "test_platform")
+# s_result <- delete_series(con, 5803, schema = "test_platform")
 # print("Series deletion result:")
 # print(s_result)
 #
 # # Test table deletion
-# t_result <- delete_table(con, 22, schema = "test_platform")
+# t_result <- delete_table(con, 249, schema = "test_platform")
 # print("Table deletion result:")
 # print(t_result)
 #
@@ -78,8 +78,8 @@ source("tests/testthat/helper-connection.R")
 # )
 # result <- insert_new_table_table(con, df, schema = "test_platform")
 # print(result)
-#
 # stop_db_capturing()
+
 # start_db_capturing()
 # con <- make_test_connection()
 #
@@ -107,7 +107,7 @@ source("tests/testthat/helper-connection.R")
 # print(result)
 #
 # stop_db_capturing()
-#
+
 # start_db_capturing()
 # con <- make_test_connection()
 #
@@ -151,7 +151,7 @@ source("tests/testthat/helper-connection.R")
 # print(result)
 #
 # stop_db_capturing()
-#
+
 # start_db_capturing()
 # con <- make_test_connection()
 #
@@ -195,7 +195,7 @@ source("tests/testthat/helper-connection.R")
 # print(result)
 #
 # stop_db_capturing()
-#
+
 # start_db_capturing()
 # con <- make_test_connection()
 #
@@ -209,16 +209,35 @@ source("tests/testthat/helper-connection.R")
 # print(result)
 #
 # stop_db_capturing()
-#
+
 # start_db_capturing()
 # con <- make_test_connection()
 #
 # df <- data.frame(
-#   series_id = 1917L,
+#   series_id = 1918L,
 #   published = as.POSIXct("2024-01-01 10:00:00"),
 #   stringsAsFactors = FALSE
 # )
 # result <- insert_new_vintage(con, df, schema = "test_platform")
 # print(result)
-#
+
 # stop_db_capturing()
+#
+# start_db_capturing()
+# con <- make_test_connection()
+# remove_empty_vintages(con, "test_platform")
+# stop_db_capturing()
+
+# options(dittodb.debug = TRUE)
+# start_db_capturing()
+# con <- make_test_connection()
+# calculate_vintage_hashes(361, con, "test_platform")
+# stop_db_capturing()
+# options(dittodb.debug = FALSE)
+
+start_db_capturing()
+con <- make_test_connection()
+add_missing_vintage_hashes(con, "test_platform")
+stop_db_capturing()
+
+

@@ -279,20 +279,6 @@ test_that("test_dimension_selector function works correctly", {
   expect_equal(nrow(result), 5)  # 2 from dim1 + 2 from dim2 + 1 from dim3
 })
 
-# Suggestions for fixing the actual dimension_selector function
-test_that("suggestions for fixing the real function", {
-  # This test is skipped as it's just documentation
-  skip("This is an empty test with suggestions")
-
-  # 1. The main issue is likely in how dim_id is used in filter:
-  # Change: dplyr::filter(df, tab_dim_id == dim_id)
-  # To: dplyr::filter(df, tab_dim_id == !!dim_id)
-  # Or: df[df$tab_dim_id == dim_id, ]
-
-  # 2. For the tests, replace with_mock (deprecated) with withr::with_mocked_bindings
-  # Or use a non-interactive version of the function for testing
-})
-
 # Correctly mocking pagination would require more complex setup
 # This is a simplified test that assumes paginated_selector works as expected
 test_that("dimension_selector pagination concept", {

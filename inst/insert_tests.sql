@@ -8,7 +8,7 @@ BEGIN
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_table(
+    SELECT * FROM platform.insert_new_table(
         'TEST02',
         'Test Table',
         1,
@@ -21,7 +21,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.table
+        SELECT 1 FROM platform.table
         WHERE code = 'TEST02'
         AND name = 'Test Table'
     ), 'Table should exist after insert';
@@ -29,7 +29,7 @@ BEGIN
 
     -- Test 2: Duplicate insert
     RAISE NOTICE 'Testing duplicate insert...';
-    SELECT * FROM test_platform.insert_new_table(
+    SELECT * FROM platform.insert_new_table(
         'TEST01',
         'Test Table 2',  -- different name
         1,
@@ -43,7 +43,7 @@ BEGIN
 
     -- Test 3: Insert with nulls
     RAISE NOTICE 'Testing insert with nulls...';
-    SELECT * FROM test_platform.insert_new_table(
+    SELECT * FROM platform.insert_new_table(
         'TEST03',
         'Test Table Nulls',
         1,
@@ -56,7 +56,7 @@ BEGIN
 
     -- Verify the null insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.table
+        SELECT 1 FROM platform.table
         WHERE code = 'TEST03'
         AND url IS NULL
         AND notes IS NULL
@@ -85,13 +85,13 @@ BEGIN
 
     -- Create test table first
     RAISE NOTICE 'Creating test table...';
-    INSERT INTO test_platform.table (code, name, source_id)
+    INSERT INTO platform.table (code, name, source_id)
     VALUES ('TEST_DIM', 'Test Dimension Table', 1)
     RETURNING id INTO v_table_id;
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_table_dimensions(
+    SELECT * FROM platform.insert_new_table_dimensions(
         v_table_id,
         'time',
         true
@@ -101,7 +101,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.table_dimensions
+        SELECT 1 FROM platform.table_dimensions
         WHERE table_id = v_table_id
         AND dimension = 'time'
         AND is_time = true
@@ -110,7 +110,7 @@ BEGIN
 
     -- Test 2: Duplicate insert
     RAISE NOTICE 'Testing duplicate insert...';
-    SELECT * FROM test_platform.insert_new_table_dimensions(
+    SELECT * FROM platform.insert_new_table_dimensions(
         v_table_id,
         'time',
         true
@@ -121,7 +121,7 @@ BEGIN
 
     -- Test 3: Different dimension for same table
     RAISE NOTICE 'Testing different dimension insert...';
-    SELECT * FROM test_platform.insert_new_table_dimensions(
+    SELECT * FROM platform.insert_new_table_dimensions(
         v_table_id,
         'region',
         false
@@ -152,18 +152,18 @@ BEGIN
 
     -- Create test table first
     RAISE NOTICE 'Creating test table and dimension...';
-    INSERT INTO test_platform.table (code, name, source_id)
+    INSERT INTO platform.table (code, name, source_id)
     VALUES ('TEST_DIM_LEV', 'Test Dimension Levels', 1)
     RETURNING id INTO v_table_id;
 
     -- Create dimension
-    INSERT INTO test_platform.table_dimensions (table_id, dimension, is_time)
+    INSERT INTO platform.table_dimensions (table_id, dimension, is_time)
     VALUES (v_table_id, 'region', false)
     RETURNING id INTO v_dimension_id;
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_dimension_levels(
+    SELECT * FROM platform.insert_new_dimension_levels(
         v_dimension_id,
         'SI',
         'Slovenia'
@@ -173,7 +173,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.dimension_levels
+        SELECT 1 FROM platform.dimension_levels
         WHERE tab_dim_id = v_dimension_id
         AND level_value = 'SI'
         AND level_text = 'Slovenia'
@@ -182,7 +182,7 @@ BEGIN
 
     -- Test 2: Duplicate insert
     RAISE NOTICE 'Testing duplicate insert...';
-    SELECT * FROM test_platform.insert_new_dimension_levels(
+    SELECT * FROM platform.insert_new_dimension_levels(
         v_dimension_id,
         'SI',
         'Slovenia'
@@ -193,7 +193,7 @@ BEGIN
 
     -- Test 3: Insert with NULL level_text
     RAISE NOTICE 'Testing NULL level_text...';
-    SELECT * FROM test_platform.insert_new_dimension_levels(
+    SELECT * FROM platform.insert_new_dimension_levels(
         v_dimension_id,
         'HR',
         NULL
@@ -223,7 +223,7 @@ BEGIN
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_unit(
+    SELECT * FROM platform.insert_new_unit(
         'meters'
     ) INTO v_result;
 
@@ -231,14 +231,14 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.unit
+        SELECT 1 FROM platform.unit
         WHERE name = 'meters'
     ), 'Unit should exist after insert';
     RAISE NOTICE 'Basic insert test passed';
 
     -- Test 2: Duplicate name insert
     RAISE NOTICE 'Testing duplicate name insert...';
-    SELECT * FROM test_platform.insert_new_unit(
+    SELECT * FROM platform.insert_new_unit(
         'meters'
     ) INTO v_result;
 
@@ -268,17 +268,17 @@ BEGIN
 
     -- Create prerequisites
     RAISE NOTICE 'Creating test table and unit...';
-    INSERT INTO test_platform.table (code, name, source_id)
+    INSERT INTO platform.table (code, name, source_id)
     VALUES ('TEST_SERIES', 'Test Series Table', 1)
     RETURNING id INTO v_table_id;
 
-    INSERT INTO test_platform.unit (name)
+    INSERT INTO platform.unit (name)
     VALUES ('count')
     RETURNING id INTO v_unit_id;
 
     -- Test 1: Basic insert with monthly interval
     RAISE NOTICE 'Testing basic insert with monthly interval...';
-    SELECT * FROM test_platform.insert_new_series(
+    SELECT * FROM platform.insert_new_series(
         v_table_id,
         'Monthly Series',
         v_unit_id,
@@ -290,7 +290,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.series
+        SELECT 1 FROM platform.series
         WHERE table_id = v_table_id
         AND code = 'MS01'
         AND interval_id = 'M'
@@ -299,7 +299,7 @@ BEGIN
 
     -- Test 2: Duplicate code for same table
     RAISE NOTICE 'Testing duplicate code insert...';
-    SELECT * FROM test_platform.insert_new_series(
+    SELECT * FROM platform.insert_new_series(
         v_table_id,
         'Different Name',
         v_unit_id,
@@ -312,11 +312,11 @@ BEGIN
 
     -- Test 3: Same code for different table
     RAISE NOTICE 'Testing same code for different table...';
-    INSERT INTO test_platform.table (code, name, source_id)
+    INSERT INTO platform.table (code, name, source_id)
     VALUES ('TEST_SERIES2', 'Test Series Table 2', 1)
     RETURNING id INTO v_table_id;
 
-    SELECT * FROM test_platform.insert_new_series(
+    SELECT * FROM platform.insert_new_series(
         v_table_id,
         'Annual Series',
         v_unit_id,
@@ -353,27 +353,27 @@ BEGIN
     RAISE NOTICE 'Creating test table, dimension, series and dimension level...';
 
     -- Create table
-    INSERT INTO test_platform.table (code, name, source_id)
+    INSERT INTO platform.table (code, name, source_id)
     VALUES ('TEST_SER_LEV', 'Test Series Levels', 1)
     RETURNING id INTO v_table_id;
 
     -- Create dimension
-    INSERT INTO test_platform.table_dimensions (table_id, dimension, is_time)
+    INSERT INTO platform.table_dimensions (table_id, dimension, is_time)
     VALUES (v_table_id, 'region', false)
     RETURNING id INTO v_dimension_id;
 
     -- Add dimension level
-    INSERT INTO test_platform.dimension_levels (tab_dim_id, level_value, level_text)
+    INSERT INTO platform.dimension_levels (tab_dim_id, level_value, level_text)
     VALUES (v_dimension_id, 'SI', 'Slovenia');
 
     -- Create series
-    INSERT INTO test_platform.series (table_id, name_long, code)
+    INSERT INTO platform.series (table_id, name_long, code)
     VALUES (v_table_id, 'Test Series', 'TS01')
     RETURNING id INTO v_series_id;
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_series_levels(
+    SELECT * FROM platform.insert_new_series_levels(
         v_series_id,
         v_dimension_id,
         'SI'
@@ -383,7 +383,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.series_levels
+        SELECT 1 FROM platform.series_levels
         WHERE series_id = v_series_id
         AND tab_dim_id = v_dimension_id
         AND level_value = 'SI'
@@ -392,7 +392,7 @@ BEGIN
 
     -- Test 2: Duplicate insert
     RAISE NOTICE 'Testing duplicate insert...';
-    SELECT * FROM test_platform.insert_new_series_levels(
+    SELECT * FROM platform.insert_new_series_levels(
         v_series_id,
         v_dimension_id,
         'SI'
@@ -403,7 +403,7 @@ BEGIN
 
     -- Test 3: Insert with non-existent level value
     RAISE NOTICE 'Testing insert with invalid level value...';
-    SELECT * FROM test_platform.insert_new_series_levels(
+    SELECT * FROM platform.insert_new_series_levels(
         v_series_id,
         v_dimension_id,
         'HR'  -- This level value doesn't exist in dimension_levels
@@ -434,7 +434,7 @@ BEGIN
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_source(
+    SELECT * FROM platform.insert_new_source(
         5,
         'SURSi',
         'Statistical Office',
@@ -445,7 +445,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.source
+        SELECT 1 FROM platform.source
         WHERE id = 5
         AND name = 'SURSi'
         AND name_long = 'Statistical Office'
@@ -454,7 +454,7 @@ BEGIN
 
     -- Test 2: Duplicate id
     RAISE NOTICE 'Testing duplicate id...';
-    SELECT * FROM test_platform.insert_new_source(
+    SELECT * FROM platform.insert_new_source(
         5,  -- same id
         'DIFFERENT',
         'Different Office',
@@ -466,7 +466,7 @@ BEGIN
 
     -- Test 3: Duplicate name
     RAISE NOTICE 'Testing duplicate name...';
-    SELECT * FROM test_platform.insert_new_source(
+    SELECT * FROM platform.insert_new_source(
         6,      -- different id
         'SURSi', -- same name
         'Another Statistical Office',
@@ -479,7 +479,7 @@ BEGIN
     -- Test 4: Name with dash (should fail CHECK constraint)
     RAISE NOTICE 'Testing name with dash...';
     BEGIN
-        SELECT * FROM test_platform.insert_new_source(
+        SELECT * FROM platform.insert_new_source(
             7,
             'TEST-SOURCE',
             NULL,
@@ -514,7 +514,7 @@ BEGIN
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_category(
+    SELECT * FROM platform.insert_new_category(
         999,  -- id
         'Test Category',
         1   -- source_id
@@ -524,7 +524,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.category
+        SELECT 1 FROM platform.category
         WHERE id = 999
         AND name = 'Test Category'
         AND source_id = 1
@@ -533,7 +533,7 @@ BEGIN
 
     -- Test 2: Duplicate id and source_id
     RAISE NOTICE 'Testing duplicate insert...';
-    SELECT * FROM test_platform.insert_new_category(
+    SELECT * FROM platform.insert_new_category(
         999,  -- same id
         'Different Name',
         1   -- same source_id
@@ -544,7 +544,7 @@ BEGIN
 
     -- Test 3: Same name, different id for same source
     RAISE NOTICE 'Testing same name different id for same source...';
-    SELECT * FROM test_platform.insert_new_category(
+    SELECT * FROM platform.insert_new_category(
         999,              -- different id
         'Test Category', -- same name
         1               -- same source_id
@@ -555,7 +555,7 @@ BEGIN
 
     -- Test 4: Same id for different source
     RAISE NOTICE 'Testing same id for different source...';
-    SELECT * FROM test_platform.insert_new_category(
+    SELECT * FROM platform.insert_new_category(
         999,  -- same id
         'Test Category 2',
         2   -- different source_id
@@ -589,11 +589,11 @@ BEGIN
     RAISE NOTICE 'Creating test categories...';
 
     -- Insert source
-    INSERT INTO test_platform.source (id, name)
+    INSERT INTO platform.source (id, name)
     VALUES (5, 'SURSi');
 
     -- Insert categories for testing
-    INSERT INTO test_platform.category (id, name, source_id)
+    INSERT INTO platform.category (id, name, source_id)
     VALUES
         (1, 'Parent', 1),
         (2, 'Child', 1),
@@ -601,7 +601,7 @@ BEGIN
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_category_relationship(
+    SELECT * FROM platform.insert_new_category_relationship(
         2,  -- category_id (child)
         1,  -- parent_id
         1   -- source_id
@@ -611,7 +611,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.category_relationship
+        SELECT 1 FROM platform.category_relationship
         WHERE category_id = 2
         AND parent_id = 1
         AND source_id = 1
@@ -620,7 +620,7 @@ BEGIN
 
     -- Test 2: Duplicate relationship
     RAISE NOTICE 'Testing duplicate relationship...';
-    SELECT * FROM test_platform.insert_new_category_relationship(
+    SELECT * FROM platform.insert_new_category_relationship(
         2,  -- same category_id
         1,  -- same parent_id
         1   -- same source_id
@@ -631,7 +631,7 @@ BEGIN
 
     -- Test 3: Different relationship for same child
     RAISE NOTICE 'Testing different parent for same child...';
-    SELECT * FROM test_platform.insert_new_category_relationship(
+    SELECT * FROM platform.insert_new_category_relationship(
         2,  -- same category_id
         3,  -- different parent_id
         1   -- same source_id
@@ -664,21 +664,21 @@ BEGIN
     RAISE NOTICE 'Creating test source, category and table...';
 
     -- Insert source
-    INSERT INTO test_platform.source (id, name)
+    INSERT INTO platform.source (id, name)
     VALUES (5, 'SURSi');
 
     -- Insert category
-    INSERT INTO test_platform.category (id, name, source_id)
+    INSERT INTO platform.category (id, name, source_id)
     VALUES (1, 'Test Category', 5);
 
     -- Insert table
-    INSERT INTO test_platform.table (code, name, source_id)
+    INSERT INTO platform.table (code, name, source_id)
     VALUES ('TEST_CAT_TAB', 'Test Category Table', 5)
     RETURNING id INTO v_table_id;
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_category_table(
+    SELECT * FROM platform.insert_new_category_table(
         1,          -- category_id
         v_table_id, -- table_id
         5          -- source_id
@@ -688,7 +688,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.category_table
+        SELECT 1 FROM platform.category_table
         WHERE category_id = 1
         AND table_id = v_table_id
         AND source_id = 5
@@ -697,7 +697,7 @@ BEGIN
 
     -- Test 2: Duplicate link
     RAISE NOTICE 'Testing duplicate link...';
-    SELECT * FROM test_platform.insert_new_category_table(
+    SELECT * FROM platform.insert_new_category_table(
         1,          -- same category_id
         v_table_id, -- same table_id
         5          -- same source_id
@@ -707,12 +707,12 @@ BEGIN
     RAISE NOTICE 'Duplicate link test passed';
 
     -- Insert another category for next test
-    INSERT INTO test_platform.category (id, name, source_id)
+    INSERT INTO platform.category (id, name, source_id)
     VALUES (2, 'Another Category', 5);
 
     -- Test 3: Different category for same table
     RAISE NOTICE 'Testing different category for same table...';
-    SELECT * FROM test_platform.insert_new_category_table(
+    SELECT * FROM platform.insert_new_category_table(
         2,          -- different category_id
         v_table_id, -- same table_id
         5          -- same source_id
@@ -747,18 +747,18 @@ BEGIN
     RAISE NOTICE 'Creating test table and series...';
 
     -- Create table
-    INSERT INTO test_platform.table (code, name, source_id)
+    INSERT INTO platform.table (code, name, source_id)
     VALUES ('TEST_VINT', 'Test Vintage Table', 1)
     RETURNING id INTO v_table_id;
 
     -- Create series
-    INSERT INTO test_platform.series (table_id, name_long, code)
+    INSERT INTO platform.series (table_id, name_long, code)
     VALUES (v_table_id, 'Test Series', 'TS01')
     RETURNING id INTO v_series_id;
 
     -- Test 1: Basic insert
     RAISE NOTICE 'Testing basic insert...';
-    SELECT * FROM test_platform.insert_new_vintage(
+    SELECT * FROM platform.insert_new_vintage(
         v_series_id,
         '2024-01-01 10:00:00'
     ) INTO v_result;
@@ -767,7 +767,7 @@ BEGIN
 
     -- Verify the insert
     ASSERT EXISTS (
-        SELECT 1 FROM test_platform.vintage
+        SELECT 1 FROM platform.vintage
         WHERE series_id = v_series_id
         AND published = '2024-01-01 10:00:00'
     ), 'Vintage should exist after insert';
@@ -775,7 +775,7 @@ BEGIN
 
     -- Test 2: Duplicate timestamp for same series
     RAISE NOTICE 'Testing duplicate timestamp...';
-    SELECT * FROM test_platform.insert_new_vintage(
+    SELECT * FROM platform.insert_new_vintage(
         v_series_id,
         '2024-01-01 10:00:00'  -- same timestamp
     ) INTO v_result;
@@ -785,7 +785,7 @@ BEGIN
 
     -- Test 3: Different timestamp for same series
     RAISE NOTICE 'Testing different timestamp...';
-    SELECT * FROM test_platform.insert_new_vintage(
+    SELECT * FROM platform.insert_new_vintage(
         v_series_id,
         '2024-01-01 11:00:00'  -- different timestamp
     ) INTO v_result;
@@ -800,4 +800,118 @@ EXCEPTION WHEN OTHERS THEN
     RAISE;
 END $$;
 
+ROLLBACK;
+
+
+
+-- ============================================================================
+-- Tests for insert_prepared_data_points
+-- ============================================================================
+BEGIN;
+DO $$
+DECLARE
+    v_table_id integer;
+    v_dimension_id1 integer;
+    v_dimension_id2 integer;
+    v_unit_id integer;
+    v_series_id integer;
+    v_vintage_id integer;
+    v_count_result RECORD;
+BEGIN
+    RAISE NOTICE 'Starting insert_prepared_data_points tests...';
+
+    -- Create test prerequisites
+    INSERT INTO platform.table (code, name, source_id, url)
+    VALUES ('TEST_TABLE', 'Test Table', 1, 'http://test.com')
+    RETURNING id INTO v_table_id;
+
+    INSERT INTO platform.unit (name)
+    VALUES ('test_unit')
+    RETURNING id INTO v_unit_id;
+
+    -- Create dimensions - use separate inserts to get both IDs
+    INSERT INTO platform.table_dimensions (table_id, dimension, is_time)
+    VALUES (v_table_id, 'region', false)
+    RETURNING id INTO v_dimension_id1;
+
+    INSERT INTO platform.table_dimensions (table_id, dimension, is_time)
+    VALUES (v_table_id, 'sector', false)
+    RETURNING id INTO v_dimension_id2;
+
+    -- Create dimension levels
+    INSERT INTO platform.dimension_levels (tab_dim_id, level_value, level_text)
+    VALUES
+        (v_dimension_id1, 'SI', 'Slovenia'),
+        (v_dimension_id2, 'S1', 'Total Economy');
+
+    -- Create series
+    INSERT INTO platform.series (table_id, name_long, code, unit_id, interval_id)
+    VALUES (v_table_id, 'Test Series', 'TEST_SERIES', v_unit_id, 'A')
+    RETURNING id INTO v_series_id;
+
+    -- Create series levels
+    INSERT INTO platform.series_levels (series_id, tab_dim_id, level_value)
+    VALUES
+        (v_series_id, v_dimension_id1, 'SI'),
+        (v_series_id, v_dimension_id2, 'S1');
+
+    -- Create vintage
+    INSERT INTO platform.vintage (series_id, published)
+    VALUES (v_series_id, CURRENT_TIMESTAMP)
+    RETURNING id INTO v_vintage_id;
+
+     -- Create temp table for testing
+    CREATE TEMP TABLE tmp_prepared_data (
+        series_id integer,
+        time character varying,
+        value numeric,
+        flag character varying,
+        region character varying,
+        sector character varying,
+        interval_id character varying
+    );
+
+    -- Insert test data
+    INSERT INTO tmp_prepared_data (series_id, time, value, flag, region, sector, interval_id)
+    VALUES
+        (v_series_id, '2023', 100.5, 'T', 'SI', 'S1', 'A'),
+        (v_series_id, '2022', 95.2, '', 'SI', 'S1', 'A');
+
+    -- Test function execution
+    SELECT * FROM platform.insert_prepared_data_points(
+        v_table_id,
+        ARRAY[v_dimension_id1, v_dimension_id2],
+        'A'
+    ) INTO v_count_result;
+
+    -- Verify results
+    ASSERT v_count_result.periods_inserted IN (0, 2),
+        format('Expected 0 or 2 periods inserted, got %s', v_count_result.periods_inserted);
+
+    ASSERT v_count_result.datapoints_inserted IN (0, 2),
+        format('Expected 0 or 2 datapoints inserted, got %s', v_count_result.datapoints_inserted);
+
+    ASSERT v_count_result.flags_inserted IN (0, 1),
+        format('Expected 0 or 1 flags inserted, got %s', v_count_result.flags_inserted);
+
+    -- Check data was actually inserted
+    ASSERT EXISTS (
+        SELECT 1
+        FROM platform.data_points
+        WHERE vintage_id = v_vintage_id AND period_id = '2023'
+    ), 'Data point for 2023 should exist';
+
+    -- Check flag was inserted
+    ASSERT EXISTS (
+        SELECT 1
+        FROM platform.flag_datapoint
+        WHERE vintage_id = v_vintage_id AND period_id = '2023' AND flag_id = 'T'
+    ), 'Flag for 2023 should exist';
+
+    RAISE NOTICE 'All tests passed successfully';
+
+EXCEPTION WHEN OTHERS THEN
+    RAISE NOTICE 'Test failed: %', SQLERRM;
+    RAISE;
+END $$;
 ROLLBACK;
