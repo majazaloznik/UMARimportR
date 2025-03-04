@@ -407,66 +407,116 @@ insert_new_vintage <- function(con, df, schema = "platform") {
 #' @return A data frame with insertion counts
 #' @export
 insert_prepared_data_points <- function(prep_data, con, schema = "platform") {
-  # Create temporary table with the prepared data
+  # 1. Create temp table
   DBI::dbWriteTable(con, "tmp_prepared_data", prep_data$data, temporary = TRUE, overwrite = TRUE)
   on.exit(DBI::dbExecute(con, "DROP TABLE IF EXISTS tmp_prepared_data"))
 
-  # Build dynamic join conditions for each dimension
-  join_conditions <- sapply(seq_along(prep_data$dimension_names), function(i) {
-    dim_name <- prep_data$dimension_names[i]
-    # Use column name as is from the data frame
-    col_name <- names(prep_data$data)[names(prep_data$data) %in%
-                                        c(dim_name, toupper(dim_name))]
-    if (length(col_name) == 0) {
-      stop("Column not find for dimension: ", dim_name)
+  # 2. Add series_id column
+  DBI::dbExecute(con, "ALTER TABLE tmp_prepared_data ADD COLUMN series_id integer")
+  DBI::dbExecute(con, "ALTER TABLE tmp_prepared_data ADD COLUMN vintage_id integer")
+
+  # 3. Match dimension values with series
+  dimension_names <- prep_data$dimension_names
+  dimension_ids <- prep_data$dimension_ids
+
+  # 3a. Create a dynamic SQL query for each dimension
+  join_conditions <- lapply(seq_along(dimension_names), function(i) {
+    # Find column in actual data (case-insensitive)
+    dim_name <- dimension_names[i]
+    dim_id <- dimension_ids[i]
+
+    # Find matching column name in data
+    col_names <- names(prep_data$data)
+    match_idx <- which(tolower(col_names) == tolower(dim_name))
+
+    if (length(match_idx) == 0) {
+      stop("Column not found for dimension: ", dim_name)
     }
 
-    # Build condition with proper quoting
-    sprintf(
-      "tmp_prepared_data.%s = sl.level_value AND sl.tab_dim_id = %d",
-      DBI::dbQuoteIdentifier(con, col_name[1]),
-      prep_data$dimension_ids[i]
-    )
+    # Use actual column name from data
+    actual_col <- col_names[match_idx[1]]
+
+    sprintf("(tmp_prepared_data.%s = sl.level_value AND sl.tab_dim_id = %d)",
+            DBI::dbQuoteIdentifier(con, actual_col),
+            dim_id)
   })
 
-  # Join all conditions
-  all_conditions <- paste(join_conditions, collapse = " AND ")
-
-  # Map series IDs to the data using proper conditions
-  sql_query <- sprintf(
+  # 3b. Update series IDs
+  update_query <- sprintf(
     "UPDATE tmp_prepared_data
      SET series_id = s.id
      FROM %s.series s
      JOIN %s.series_levels sl ON s.id = sl.series_id
-     WHERE s.table_id = %d
-     AND %s",
+     WHERE s.table_id = %d AND %s",
     schema, schema,
     prep_data$table_id,
-    all_conditions
+    paste(join_conditions, collapse = " AND ")
   )
 
-  # Execute the update
-  DBI::dbExecute(con, sql_query)
-
-  # Call the SQL function to insert data
-  result <- UMARimportR::sql_function_call(
-    con,
-    "insert_prepared_data_points",
-    list(
-      p_table_id = prep_data$table_id,
-      p_dimension_ids = prep_data$dimension_ids,
-      p_interval_id = prep_data$interval_id
-    ),
+  # 3c. Update vintage IDs
+  vintage_query <- sprintf(
+    "UPDATE tmp_prepared_data
+     SET vintage_id = v.id
+     FROM (
+       SELECT DISTINCT ON (series_id) id, series_id
+       FROM %s.vintage
+       ORDER BY series_id, published DESC
+     ) v
+     WHERE tmp_prepared_data.series_id = v.series_id",
     schema
   )
 
-  # Show results
-  message("Inserted ", result$periods_inserted, " new periods")
-  message("Inserted ", result$datapoints_inserted, " new data points")
-  message("Inserted ", result$flags_inserted, " new flags")
+  # 4. Execute the updates
+  DBI::dbExecute(con, update_query)
+  DBI::dbExecute(con, vintage_query)
+
+  # 5. Insert data into permanent tables
+  # 5a. Insert periods
+  periods_query <- sprintf(
+    "INSERT INTO %s.period (id, interval_id)
+     SELECT DISTINCT time, '%s' FROM tmp_prepared_data
+     ON CONFLICT DO NOTHING",
+    schema, prep_data$interval_id
+  )
+
+  # 5b. Insert data points
+  datapoints_query <- sprintf(
+    "INSERT INTO %s.data_points (vintage_id, period_id, value)
+     SELECT vintage_id, time, value FROM tmp_prepared_data
+     WHERE vintage_id IS NOT NULL
+     ON CONFLICT DO NOTHING",
+    schema
+  )
+
+  # 5c. Insert flags
+  flags_query <- sprintf(
+    "INSERT INTO %s.flag_datapoint (vintage_id, period_id, flag_id)
+     SELECT vintage_id, time, flag FROM tmp_prepared_data
+     WHERE vintage_id IS NOT NULL AND flag <> ''
+     ON CONFLICT DO NOTHING",
+    schema
+  )
+
+  # 6. Execute inserts and track results
+  periods_inserted <- DBI::dbExecute(con, periods_query)
+  datapoints_inserted <- DBI::dbExecute(con, datapoints_query)
+  flags_inserted <- DBI::dbExecute(con, flags_query)
+
+  # 7. Create result
+  result <- data.frame(
+    periods_inserted = periods_inserted,
+    datapoints_inserted = datapoints_inserted,
+    flags_inserted = flags_inserted
+  )
+
+  # 8. Display results
+  message("Inserted ", periods_inserted, " new periods")
+  message("Inserted ", datapoints_inserted, " new data points")
+  message("Inserted ", flags_inserted, " new flags")
 
   invisible(result)
 }
+
 
 #' #' Insert table structure data for a new table
 #' #'
