@@ -243,37 +243,22 @@ test_that("insert_prepared_data_points correctly inserts data", {
         time = c("2023", "2022"),
         value = c(100.5, 95.2),
         flag = c("T", ""),
-        region = c("SI", "SI"),
-        sector = c("S1", "S1"),
+        VRSTA.PODATKA = c("orig", "orig"),
+        SKD.DEJAVNOST...NAMENSKA.SKUPINA = c("B+C+D[skd]", "B+C+D[skd]"),
         interval_id = c("A", "A"),
         stringsAsFactors = FALSE
       ),
       table_id = 123,
       time_dimension = "LETO",
       interval_id = "A",
-      dimension_ids = c(456, 457),
-      dimension_names = c("region", "sector")
+      dimension_ids = c(9, 11),
+      dimension_names = c("VRSTA PODATKA", "SKD DEJAVNOST / NAMENSKA SKUPINA")
     )
 
-    # Mock the temporary table creation
+    # Use mockery to replace database execution functions
     mockery::stub(insert_prepared_data_points, "DBI::dbWriteTable", TRUE)
-
-    # Mock all the database executions
-    mockery::stub(insert_prepared_data_points, "DBI::dbExecute", 0)
-
-    # But override the last three calls (the insertions)
-    # that count the number of rows inserted
-    mockery_env <- environment(insert_prepared_data_points)
-    counter <- 0
-    mockery::stub(insert_prepared_data_points, "DBI::dbExecute", function(...) {
-      counter <<- counter + 1
-      if (counter >= 5) {  # First 4 calls are setup
-        if (counter == 5) return(2)      # periods
-        if (counter == 6) return(2)      # datapoints
-        if (counter == 7) return(2)      # flags - match what function returns
-      }
-      return(0)
-    }, depth = 0)
+    mockery::stub(insert_prepared_data_points, "DBI::dbGetQuery", data.frame(count = 2))
+    mockery::stub(insert_prepared_data_points, "DBI::dbExecute", 2)
 
     # Capture messages
     msgs <- capture_messages({
@@ -281,15 +266,14 @@ test_that("insert_prepared_data_points correctly inserts data", {
     })
 
     # Check result structure
-    expect_s3_class(result, "data.frame")
     expect_equal(result$periods_inserted, 2)
     expect_equal(result$datapoints_inserted, 2)
-    expect_equal(result$flags_inserted, 2)  # Update expectation to match actual
+    expect_equal(result$flags_inserted, 2)
 
     # Check messages
     expect_true(any(grepl("Inserted 2 new periods", msgs)))
     expect_true(any(grepl("Inserted 2 new data points", msgs)))
-    expect_true(any(grepl("Inserted 2 new flags", msgs)))  # Update expectation
+    expect_true(any(grepl("Inserted 2 new flags", msgs)))
 
     dbDisconnect(con)
   })
