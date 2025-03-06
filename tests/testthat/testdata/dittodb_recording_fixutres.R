@@ -223,10 +223,10 @@ source("tests/testthat/helper-connection.R")
 
 # stop_db_capturing()
 #
-# start_db_capturing()
-# con <- make_test_connection()
-# remove_empty_vintages(con, "test_platform")
-# stop_db_capturing()
+start_db_capturing()
+con <- make_test_connection()
+remove_empty_vintages(con, "test_platform")
+stop_db_capturing()
 
 # options(dittodb.debug = TRUE)
 # start_db_capturing()
@@ -235,9 +235,8 @@ source("tests/testthat/helper-connection.R")
 # stop_db_capturing()
 # options(dittodb.debug = FALSE)
 
-start_db_capturing()
-con <- make_test_connection()
-add_missing_vintage_hashes(con, "test_platform")
-stop_db_capturing()
-
+# start_db_capturing()
+# con <- make_test_connection()
+# add_missing_vintage_hashes(con, "test_platform")
+# stop_db_capturing()
 

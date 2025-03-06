@@ -19,14 +19,15 @@ test_that("add_missing_vintage_hashes produces expected output", {
 
     # Capture all printed output
     output <- capture.output({
-      add_missing_vintage_hashes(con, "test_platform")
+      x <- add_missing_vintage_hashes(con, "test_platform")
     })
 
     # Check for expected output
     expect_match(output[1], "Removed 1 empty vintages.", fixed = TRUE)
     expect_match(output[2], "Processed (\\d+)/(\\d+) vintages", perl = TRUE)
     expect_match(output[3], "All vintage hashes updated successfully", fixed = TRUE)
-
+    print(x)
+    expect_true(x == 1)
     dbDisconnect(con)
   })
 })

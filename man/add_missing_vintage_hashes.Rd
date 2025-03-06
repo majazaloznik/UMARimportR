@@ -12,7 +12,7 @@ add_missing_vintage_hashes(con, schema = "platform")
 \item{schema}{schema name, defaults to "platform"}
 }
 \value{
-nada
+number of updated vintages
 }
 \description{
 Queries all the (newly added) vintages which don't have hashes yet

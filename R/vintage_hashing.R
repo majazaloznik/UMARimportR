@@ -83,7 +83,7 @@ calculate_vintage_hashes <- function(vintage_ids, con, schema = "platform") {
 #' @param con connection to database
 #' @param schema schema name, defaults to "platform"
 #'
-#' @returns nada
+#' @returns number of updated vintages
 #' @export
 add_missing_vintage_hashes <- function(con, schema = "platform") {
   # First delete any empty vintages in the database
@@ -139,4 +139,6 @@ add_missing_vintage_hashes <- function(con, schema = "platform") {
   }
 
   cat("All vintage hashes updated successfully\n")
+  # invisibly return the value of total_vintages
+  invisible(total_vintages)
 }
