@@ -1,17 +1,17 @@
+# Set proxy BEFORE renv activation
+Sys.setenv(http_proxy="http://proxy.gov.si:80")
+Sys.setenv(https_proxy="http://proxy.gov.si:80")
+cat("UMAR proxy is set!\n")
+
+# Then activate renv
 source("renv/activate.R")
-options(renv.snapshot.development = TRUE)
 
-if (Sys.getenv("CI") != "true") {
+# renv settings
+options(renv.config.auto.snapshot = TRUE)
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+options(renv.download.method = "libcurl")
 
-  Sys.setenv(http_proxy="http://proxy.gov.si:80")
-  Sys.setenv(http_proxy_user="http://proxy.gov.si:80")
-  Sys.setenv(https_proxy="http://proxy.gov.si:80")
-  Sys.setenv(https_proxy_user="http://proxy.gov.si:80")
-  cat("UMAR proxy is set !")
-  options(continue = " ")
+# Other settings
+options(continue = " ")
+Sys.setenv(PATH = paste("C:\\Program Files\\qpdf 11.4.0\\bin", Sys.getenv("PATH"), sep=";"))
 
-  if (interactive()) {
-    suppressMessages(require(devtools))
-    suppressMessages(require(testthat))
-  }
-}

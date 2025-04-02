@@ -563,6 +563,8 @@ insert_prepared_data_points <- function(prep_data, con, schema = "platform") {
   invisible(result)
 }
 
+
+
 #' #' Umbrella code for adding a new table to the database
 #' #'
 #' #' The code gets the new hierarchy from the structAPI to get the category levels

@@ -131,9 +131,9 @@ $$ LANGUAGE plpgsql;
 
 
 
--- DROP FUNCTION platfrom.delete_series(in int4, out int4, out int4, out int4, out int4, out int4);
+-- DROP FUNCTION platform.delete_series(in int4, out int4, out int4, out int4, out int4, out int4);
 
-CREATE OR REPLACE FUNCTION platfrom.delete_series(p_series_id integer, OUT series_count integer, OUT vintage_count integer, OUT data_points_count integer, OUT flag_count integer, OUT series_levels_count integer)
+CREATE OR REPLACE FUNCTION platform.delete_series(p_series_id integer, OUT series_count integer, OUT vintage_count integer, OUT data_points_count integer, OUT flag_count integer, OUT series_levels_count integer)
  RETURNS record
  LANGUAGE plpgsql
 AS $function$
@@ -142,16 +142,16 @@ DECLARE
 BEGIN
     -- Get all vintage IDs for this series
     SELECT ARRAY_AGG(id) INTO v_vintage_ids
-    FROM platfrom.vintage
+    FROM platform.vintage
     WHERE series_id = p_series_id;
 
     -- Count and delete flag_datapoints
     IF v_vintage_ids IS NOT NULL THEN
         SELECT COUNT(*) INTO flag_count
-        FROM platfrom.flag_datapoint
+        FROM platform.flag_datapoint
         WHERE vintage_id = ANY(v_vintage_ids);
 
-        DELETE FROM platfrom.flag_datapoint
+        DELETE FROM platform.flag_datapoint
         WHERE vintage_id = ANY(v_vintage_ids);
     ELSE
         flag_count := 0;
@@ -160,10 +160,10 @@ BEGIN
     -- Count and delete data_points
     IF v_vintage_ids IS NOT NULL THEN
         SELECT COUNT(*) INTO data_points_count
-        FROM platfrom.data_points
+        FROM platform.data_points
         WHERE vintage_id = ANY(v_vintage_ids);
 
-        DELETE FROM platfrom.data_points
+        DELETE FROM platform.data_points
         WHERE vintage_id = ANY(v_vintage_ids);
     ELSE
         data_points_count := 0;
@@ -171,26 +171,26 @@ BEGIN
 
     -- Count and delete vintages
     SELECT COUNT(*) INTO vintage_count
-    FROM platfrom.vintage
+    FROM platform.vintage
     WHERE series_id = p_series_id;
 
-    DELETE FROM platfrom.vintage
+    DELETE FROM platform.vintage
     WHERE series_id = p_series_id;
 
     -- Count and delete series_levels
     SELECT COUNT(*) INTO series_levels_count
-    FROM platfrom.series_levels
+    FROM platform.series_levels
     WHERE series_id = p_series_id;
 
-    DELETE FROM platfrom.series_levels
+    DELETE FROM platform.series_levels
     WHERE series_id = p_series_id;
 
     -- Finally count and delete the series itself
     SELECT COUNT(*) INTO series_count
-    FROM platfrom.series
+    FROM platform.series
     WHERE id = p_series_id;
 
-    DELETE FROM platfrom.series
+    DELETE FROM platform.series
     WHERE id = p_series_id;
 END;
 $function$

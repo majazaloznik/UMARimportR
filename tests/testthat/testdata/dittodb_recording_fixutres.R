@@ -220,23 +220,47 @@ source("tests/testthat/helper-connection.R")
 # )
 # result <- insert_new_vintage(con, df, schema = "test_platform")
 # print(result)
-
+#
 # stop_db_capturing()
 #
-start_db_capturing()
-con <- make_test_connection()
-remove_empty_vintages(con, "test_platform")
-stop_db_capturing()
-
+# start_db_capturing()
+# con <- make_test_connection()
+# remove_empty_vintages(con, "test_platform")
+# stop_db_capturing()
+#
 # options(dittodb.debug = TRUE)
 # start_db_capturing()
 # con <- make_test_connection()
 # calculate_vintage_hashes(361, con, "test_platform")
 # stop_db_capturing()
 # options(dittodb.debug = FALSE)
-
+#
 # start_db_capturing()
 # con <- make_test_connection()
 # add_missing_vintage_hashes(con, "test_platform")
 # stop_db_capturing()
+#
+# start_db_capturing()
+# con <- make_test_connection()
+# vintage_cleanup(con, "test_platform")
+# stop_db_capturing()
+#
+start_db_capturing()
+con <- make_test_connection()
+result <- list(
+  no_keep_vintages_deleted = 0,
+  redundant_vintages_deleted = 0,
+  errors = list())
+result <- UMARimportR:::process_no_keep_vintage_table(con, "test_platform", 14, result)
+stop_db_capturing()
 
+start_db_capturing()
+con <- make_test_connection()
+result <- list(
+  no_keep_vintages_deleted = 0,
+  redundant_vintages_deleted = 0,
+  errors = list()
+)
+debugonce(UMARimportR:::process_keep_vintage_table)
+x <- UMARimportR:::process_keep_vintage_table(con, "test_platform", 15, result)
+stop_db_capturing()

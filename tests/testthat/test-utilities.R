@@ -6,8 +6,8 @@ test_that("sql_function_call constructs queries correctly", {
 
     # Test basic function call without args
     result <- sql_function_call(con, "get_count", NULL, "test_schema")
-    expect_s3_class(result, "data.frame")
-    expect_equal(result$count, 42)
+    expect_true(is.data.frame(result))
+    expect_equal(as.numeric(result$count), 42)
 
     # Test with parameters
     result <- sql_function_call(

@@ -28,8 +28,23 @@ test_that("add_missing_vintage_hashes produces expected output", {
     expect_match(output[3], "All vintage hashes updated successfully", fixed = TRUE)
     print(x)
     expect_true(x == 1)
-    dbDisconnect(con)
   })
 })
 
-
+test_that("vintage cleanup works", {
+  with_mock_db({
+    con <- make_test_connection()
+    result <- list(
+      no_keep_vintages_deleted = 0,
+      redundant_vintages_deleted = 0,
+      errors = list())
+      result <- UMARimportR:::process_no_keep_vintage_table(con, "test_platform", 14, result)
+    expect_true(result$no_keep_vintages_deleted == 24)
+    result <- list(
+      no_keep_vintages_deleted = 0,
+      redundant_vintages_deleted = 0,
+      errors = list())
+    result <- UMARimportR:::process_keep_vintage_table(con, "test_platform", 15, result)
+    expect_true(result$no_keep_vintages_deleted == 0)
+  })
+})
