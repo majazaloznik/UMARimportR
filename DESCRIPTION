@@ -15,14 +15,14 @@ Suggests:
     jsonlite,
     testthat (>= 3.0.0),
     mockery, 
-    digest
+    digest,
+    UMARaccessR
 Config/testthat/edition: 3
 RoxygenNote: 7.3.2
 Imports: 
     DBI (>= 1.2.0),
     RPostgres (>= 1.4.0),
     dplyr (>= 1.0.0), 
-    purrr (>= 1.0.0),
-    UMARaccessR
+    purrr (>= 1.0.0)
 Remotes: 
     majazaloznik/UMARaccessR

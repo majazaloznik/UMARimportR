@@ -165,7 +165,9 @@ vintage_cleanup <- function(con, schema = "platform", table_id = NULL) {
     redundant_vintages_deleted = 0,
     errors = list()
   )
-
+  if (!requireNamespace("UMARaccessR", quietly = TRUE)) {
+    stop("UMARaccessR must be installed to use the vintage_cleanup function")
+  }
   tryCatch({
     # First ensure all vintages have proper hashes
     message("Calculating hashes for new vintages...")
