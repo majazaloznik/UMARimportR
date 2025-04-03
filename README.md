@@ -15,5 +15,7 @@ You can install the development version of UMARimportR like so:
 ``` r
 # install.packages("devtools")
 devtools::install_github("majazaloznik/UMARimportR")
+# also install the suggested depedndency UMARaccessR
+devtools::install_github("majazaloznik/UMARaccessR")
 ```
 
