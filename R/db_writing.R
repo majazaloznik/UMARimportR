@@ -407,6 +407,7 @@ insert_new_vintage <- function(con, df, schema = "platform") {
 #' @return A data frame with insertion counts
 #' @export
 insert_prepared_data_points <- function(prep_data, con, schema = "platform") {
+  prep_data$data <- ensure_colnames_utf8(prep_data$data)
   # 1. Create temp table
   DBI::dbWriteTable(con, "tmp_prepared_data", prep_data$data, temporary = TRUE, overwrite = TRUE)
   on.exit(DBI::dbExecute(con, "DROP TABLE IF EXISTS tmp_prepared_data"))
