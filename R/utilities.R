@@ -63,12 +63,20 @@ sql_function_call <- function(con, fun_name, args, schema = "platform") {
 #' @param from Source encoding to try
 #' @return A dataframe with valid UTF-8 column names
 #'
-ensure_colnames_utf8 <- function(df, from = c("latin2", "windows-1250", "CP852")) {
-  for (enc in from) {
-    fixed_names <- iconv(names(df), from = enc, to = "UTF-8", sub = "")
-    if (!any(is.na(fixed_names))) {
-      names(df) <- fixed_names
-      break
+ensure_colnames_utf8 <- function(df) {
+  # Check if column names are already UTF-8 encoded
+  are_utf8 <- !is.na(iconv(names(df), from = "UTF-8", to = "UTF-8"))
+
+  # Only convert names that aren't already UTF-8
+  if (!all(are_utf8)) {
+    for (i in which(!are_utf8)) {
+      for (enc in c("CP1250", "latin2", "windows-1250", "CP852")) {
+        converted <- iconv(names(df)[i], from = enc, to = "UTF-8", sub = "")
+        if (!is.na(converted)) {
+          names(df)[i] <- converted
+          break
+        }
+      }
     }
   }
   return(df)

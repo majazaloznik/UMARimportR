@@ -4,7 +4,7 @@
 \alias{ensure_colnames_utf8}
 \title{Ensure proper UTF-8 encoding for dataframe column names}
 \usage{
-ensure_colnames_utf8(df, from = c("latin2", "windows-1250", "CP852"))
+ensure_colnames_utf8(df)
 }
 \arguments{
 \item{df}{A dataframe to fix column names encoding}
