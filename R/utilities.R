@@ -60,7 +60,6 @@ sql_function_call <- function(con, fun_name, args, schema = "platform") {
 #' Ensure proper UTF-8 encoding for dataframe column names
 #'
 #' @param df A dataframe to fix column names encoding
-#' @param from Source encoding to try
 #' @return A dataframe with valid UTF-8 column names
 #'
 ensure_colnames_utf8 <- function(df) {
@@ -80,31 +79,4 @@ ensure_colnames_utf8 <- function(df) {
     }
   }
   return(df)
-}
-
-#' Debug encoding issues in column names
-#'
-#' @param df A dataframe to examine
-#' @param stage Description of the debugging stage
-#' @return The original dataframe (invisibly)
-#'
-debug_encoding <- function(df, stage = "Initial") {
-  message("\n=== ", stage, " ===")
-  message("Column names: ", paste(names(df), collapse = ", "))
-
-  # Examine raw bytes of column names
-  for (name in names(df)) {
-    bytes <- paste(sprintf("%02X", as.integer(charToRaw(name))), collapse = " ")
-    message("Column '", name, "' bytes: ", bytes)
-
-    # Try various encodings
-    encodings <- c("UTF-8", "CP1250", "latin2", "ISO-8859-2")
-    for (enc in encodings) {
-      converted <- iconv(name, from = enc, to = "UTF-8", sub = "?")
-      conv_bytes <- paste(sprintf("%02X", as.integer(charToRaw(converted))), collapse = " ")
-      message("  -> ", enc, " to UTF-8: '", converted, "' bytes: ", conv_bytes)
-    }
-  }
-
-  return(invisible(df))
 }

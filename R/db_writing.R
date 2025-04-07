@@ -407,14 +407,8 @@ insert_new_vintage <- function(con, df, schema = "platform") {
 #' @return A data frame with insertion counts
 #' @export
 insert_prepared_data_points <- function(prep_data, con, schema = "platform") {
-  debug_encoding(prep_data$data, "Before UTF-8 conversion")
-
   # Apply your current encoding fix
   prep_data$data <- ensure_colnames_utf8(prep_data$data)
-
-  # Debug after conversion
-  debug_encoding(prep_data$data, "After UTF-8 conversion")
-
   # Try to see what PostgreSQL sees
   tryCatch({
     # Create a small sample to test the encoding
