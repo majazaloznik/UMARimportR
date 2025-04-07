@@ -407,7 +407,27 @@ insert_new_vintage <- function(con, df, schema = "platform") {
 #' @return A data frame with insertion counts
 #' @export
 insert_prepared_data_points <- function(prep_data, con, schema = "platform") {
+  debug_encoding(prep_data$data, "Before UTF-8 conversion")
+
+  # Apply your current encoding fix
   prep_data$data <- ensure_colnames_utf8(prep_data$data)
+
+  # Debug after conversion
+  debug_encoding(prep_data$data, "After UTF-8 conversion")
+
+  # Try to see what PostgreSQL sees
+  tryCatch({
+    # Create a small sample to test the encoding
+    sample_data <- head(prep_data$data, 5)
+    DBI::dbWriteTable(con, "tmp_encoding_test", sample_data, temporary = TRUE)
+    message("\n=== PostgreSQL Column Names ===")
+    cols <- DBI::dbGetQuery(con, "SELECT column_name FROM information_schema.columns WHERE table_name = 'tmp_encoding_test'")
+    message(paste(cols$column_name, collapse = ", "))
+    DBI::dbExecute(con, "DROP TABLE IF EXISTS tmp_encoding_test")
+  }, error = function(e) {
+    message("Error testing with PostgreSQL: ", e$message)
+  })
+
   # 1. Create temp table
   DBI::dbWriteTable(con, "tmp_prepared_data", prep_data$data, temporary = TRUE, overwrite = TRUE)
   on.exit(DBI::dbExecute(con, "DROP TABLE IF EXISTS tmp_prepared_data"))
