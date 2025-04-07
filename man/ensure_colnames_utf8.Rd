@@ -8,8 +8,6 @@ ensure_colnames_utf8(df)
 }
 \arguments{
 \item{df}{A dataframe to fix column names encoding}
-
-\item{from}{Source encoding to try}
 }
 \value{
 A dataframe with valid UTF-8 column names
