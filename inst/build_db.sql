@@ -229,4 +229,75 @@ ALTER TABLE platform.vintage
 ADD COLUMN full_hash character varying,
 ADD COLUMN partial_hash character varying;
 
+
+
+
+-- Step 1: Drop dependent foreign keys (second level first)
+ALTER TABLE platform.flag_datapoint DROP CONSTRAINT flag_datapoint_vintage_id_period_id_fkey;
+
+-- Step 2: Drop first level foreign keys
+ALTER TABLE platform.data_points DROP CONSTRAINT data_points_vintage_id_fkey;
+
+-- Step 3: Modify the primary vintage_id column
+ALTER TABLE platform.vintage ALTER COLUMN id TYPE bigint;
+
+-- Step 4: Modify all foreign key columns
+ALTER TABLE platform.data_points ALTER COLUMN vintage_id TYPE bigint;
+ALTER TABLE platform.flag_datapoint ALTER COLUMN vintage_id TYPE bigint;
+
+-- Alter the series_id column in the vintage table
+ALTER TABLE platform.vintage ALTER COLUMN series_id TYPE BIGINT;
+
+ALTER TABLE platform.dimension_levels ALTER COLUMN tab_dim_id TYPE BIGINT;
+ALTER TABLE platform.series ALTER COLUMN table_id TYPE BIGINT;
+ALTER TABLE platform.series_levels ALTER COLUMN series_id TYPE BIGINT;
+ALTER TABLE platform.series_levels ALTER COLUMN tab_dim_id TYPE BIGINT;
+ALTER TABLE platform.table_dimensions ALTER COLUMN table_id TYPE BIGINT;
+
+
+-- Step 5: Recreate foreign key constraints (first level first)
+ALTER TABLE platform.data_points ADD CONSTRAINT data_points_vintage_id_fkey
+  FOREIGN KEY (vintage_id) REFERENCES platform.vintage(id);
+
+-- Step 6: Recreate second level constraints
+ALTER TABLE platform.flag_datapoint ADD CONSTRAINT flag_datapoint_vintage_id_period_id_fkey
+  FOREIGN KEY (vintage_id, period_id) REFERENCES platform.data_points(vintage_id, period_id);
+
+-- Also update the index that uses this column
+DROP INDEX IF EXISTS platform.ind_vintage_id_period_id;
+CREATE INDEX ind_vintage_id_period_id ON platform.data_points(vintage_id, period_id);
+CREATE MATERIALIZED VIEW "views".latest_data_points
+TABLESPACE pg_default
+AS WITH latest_vintages AS (
+         SELECT DISTINCT ON (vintage.series_id) vintage.id AS vintage_id,
+            vintage.series_id
+           FROM platform.vintage
+          ORDER BY vintage.series_id, vintage.published DESC
+        )
+ SELECT s.code AS series_code,
+    t.code AS table_code,
+    s.name_long,
+    dp.period_id,
+    dp.value
+   FROM platform.data_points dp
+     JOIN latest_vintages lv ON dp.vintage_id = lv.vintage_id
+     JOIN platform.series s ON lv.series_id = s.id
+     JOIN platform."table" t ON s.table_id = t.id
+  ORDER BY s.code, dp.period_id
+WITH DATA;
+
+-- View indexes:
+CREATE INDEX idx_latest_data_points_period ON views.latest_data_points USING btree (period_id);
+CREATE INDEX idx_latest_data_points_series ON views.latest_data_points USING btree (series_code);
+CREATE INDEX idx_latest_data_points_table ON views.latest_data_points USING btree (table_code);
+
+CREATE OR REPLACE VIEW "views".latest_data_points_view
+AS SELECT latest_data_points.series_code,
+    latest_data_points.table_code,
+    latest_data_points.name_long,
+    latest_data_points.period_id,
+    latest_data_points.value
+   FROM views.latest_data_points;
+
+
 GRANT ALL ON ALL TABLES IN SCHEMA platform TO maintainer;
