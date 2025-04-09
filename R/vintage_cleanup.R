@@ -21,7 +21,8 @@ calculate_vintage_hashes <- function(vintage_ids, con, schema = "platform") {
     schema, paste(vintage_ids, collapse = ",")
   )
 
-  all_data <- DBI::dbGetQuery(con, query)
+  all_data <- DBI::dbGetQuery(con, query) |>
+    dplyr::mutate(vintage_id = as.numeric(vintage_id))
 
   # Handle case where no data points exist for any vintage
   if(nrow(all_data) == 0) {
@@ -96,7 +97,8 @@ add_missing_vintage_hashes <- function(con, schema = "platform") {
      ORDER BY id",
     schema
   )
-  all_vintages <- DBI::dbGetQuery(con, query)
+  all_vintages <- DBI::dbGetQuery(con, query) |>
+    dplyr::mutate(id = as.numeric(id))
   total_vintages <- nrow(all_vintages)
 
   # Early return if no vintages need updating
