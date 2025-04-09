@@ -4,7 +4,7 @@ test_that("calculate_vintage_hashes works", {
     result <- calculate_vintage_hashes(361, con, "test_platform")
     expect_s3_class(result, "data.frame")
     expect_equal(names(result), c("vintage_id", "full_hash", "partial_hash"))
-    expect_type(result$vintage_id, "integer")
+    expect_type(result$vintage_id, "double")
     expect_type(result$full_hash, "character")
     expect_type(result$partial_hash, "character")
     expect_equal(result$full_hash[1],"049bde8ec1266ab9864bdbf895379443")
