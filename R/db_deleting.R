@@ -78,7 +78,8 @@ remove_empty_vintages <- function(con, schema = "platform") {
     schema, schema
   )
 
-  empty_vintages <- DBI::dbGetQuery(con, query)
+  empty_vintages <- DBI::dbGetQuery(con, query) |>
+    dplyr::mutate(vintage_id = as.numeric(vintage_id))
   empty_count <- nrow(empty_vintages)
 
   if(empty_count == 0) {
