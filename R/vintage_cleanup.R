@@ -345,25 +345,22 @@ process_keep_vintage_table <- function(con, schema, table_id, result) {
         vintages <- UMARaccessR::sql_get_vintages_with_hashes_from_series_id(series_id, con, schema) |>
           dplyr::mutate(id = as.numeric(id))
 
-        # Reverse the order to process from oldest to newest
-        # This makes the comparison logic cleaner
-        vintages <- vintages[nrow(vintages):1, ]
-
         # Need at least two vintages to compare
         if (nrow(vintages) >= 2) {
           redundant_count <- 0
 
-          for (i in 2:nrow(vintages)) {
-            current_vintage <- vintages[i, ]
-            previous_vintage <- vintages[i-1, ]
+          # Keep the newest vintages that are processed first in the loop
+          for (i in 1:(nrow(vintages)-1)) {
+            current_vintage <- vintages[i, ]  # Newer vintage
+            next_vintage <- vintages[i+1, ]   # Older vintage
 
-            # If the previous vintage's full hash matches this vintage's partial hash,
-            # then this vintage is redundant (only differs by one datapoint)
-            if (!is.na(previous_vintage$full_hash) &&
-                !is.na(current_vintage$partial_hash) &&
-                previous_vintage$full_hash == current_vintage$partial_hash) {
+            # If the older vintage's partial hash matches this vintage's full hash,
+            # then the older vintage is redundant (contains a subset of data)
+            if (!is.na(current_vintage$partial_hash) &&
+                !is.na(next_vintage$full_hash) &&
+                current_vintage$partial_hash == next_vintage$full_hash) {
 
-              delete_result <- delete_vintage(con, current_vintage$id, schema)
+              delete_result <- delete_vintage(con, next_vintage$id, schema)
               result$redundant_vintages_deleted <- result$redundant_vintages_deleted +
                 delete_result$vintage_count
               redundant_count <- redundant_count + 1
@@ -388,4 +385,3 @@ process_keep_vintage_table <- function(con, schema, table_id, result) {
     return(result)
   })
 }
-
