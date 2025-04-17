@@ -207,12 +207,12 @@ vintage_cleanup <- function(con, schema = "platform", table_id = NULL) {
 
       # Get tables with keep_vintage = FALSE
       message("Identifying tables with keep_vintage = FALSE...")
-      no_keep_tables <- UMARaccessR::sql_get_tables_with_keep_vintage(FALSE, con, schema) |>
-        dplyr::mutate(id = as.numeric(id))
+      no_keep_tables <- UMARaccessR::sql_get_tables_with_keep_vintage(FALSE, con, schema)
 
       if (nrow(no_keep_tables) > 0) {
         message(sprintf("Found %d tables with keep_vintage = FALSE", nrow(no_keep_tables)))
-
+        no_keep_tables <- no_keep_tables|>
+          dplyr::mutate(id = as.numeric(id))
         # For each table with keep_vintage = FALSE
         for (current_table_id in no_keep_tables$id) {
           result <- process_no_keep_vintage_table(con, schema, current_table_id, result)
