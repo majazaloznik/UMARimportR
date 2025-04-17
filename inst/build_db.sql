@@ -225,20 +225,12 @@ ADD COLUMN "update" boolean DEFAULT true NOT NULL;
 ALTER TABLE platform."table"
 ADD COLUMN "keep_vintage" boolean DEFAULT true NOT NULL;
 
+
+
 ALTER TABLE platform.vintage
 ADD COLUMN full_hash character varying,
 ADD COLUMN partial_hash character varying;
 
-
-
-
--- Step 1: Drop dependent foreign keys (second level first)
-ALTER TABLE platform.flag_datapoint DROP CONSTRAINT flag_datapoint_vintage_id_period_id_fkey;
-
--- Step 2: Drop first level foreign keys
-ALTER TABLE platform.data_points DROP CONSTRAINT data_points_vintage_id_fkey;
-
--- Step 3: Modify the primary vintage_id column
 ALTER TABLE platform.vintage ALTER COLUMN id TYPE bigint;
 
 -- Step 4: Modify all foreign key columns
@@ -254,14 +246,6 @@ ALTER TABLE platform.series_levels ALTER COLUMN series_id TYPE BIGINT;
 ALTER TABLE platform.series_levels ALTER COLUMN tab_dim_id TYPE BIGINT;
 ALTER TABLE platform.table_dimensions ALTER COLUMN table_id TYPE BIGINT;
 
-
--- Step 5: Recreate foreign key constraints (first level first)
-ALTER TABLE platform.data_points ADD CONSTRAINT data_points_vintage_id_fkey
-  FOREIGN KEY (vintage_id) REFERENCES platform.vintage(id);
-
--- Step 6: Recreate second level constraints
-ALTER TABLE platform.flag_datapoint ADD CONSTRAINT flag_datapoint_vintage_id_period_id_fkey
-  FOREIGN KEY (vintage_id, period_id) REFERENCES platform.data_points(vintage_id, period_id);
 
 -- Also update the index that uses this column
 DROP INDEX IF EXISTS platform.ind_vintage_id_period_id;
