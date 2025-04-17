@@ -2,9 +2,15 @@
 % Please edit documentation in R/vintage_cleanup.R
 \name{vintage_cleanup}
 \alias{vintage_cleanup}
-\title{Clean up vintage data based on keep_vintage settings}
+\title{Clean up vintage data based on keep_vintage settings with table-level transactions}
 \usage{
-vintage_cleanup(con, schema = "platform", table_id = NULL)
+vintage_cleanup(
+  con,
+  schema = "platform",
+  table_id = NULL,
+  resume = FALSE,
+  progress_file = "vintage_cleanup_progress.rds"
+)
 }
 \arguments{
 \item{con}{Database connection object}
@@ -12,6 +18,10 @@ vintage_cleanup(con, schema = "platform", table_id = NULL)
 \item{schema}{Character string specifying the database schema}
 
 \item{table_id}{Optional integer specifying a single table to process}
+
+\item{resume}{Logical, whether to resume from a previous run using the progress file}
+
+\item{progress_file}{Path to file where progress will be saved when resuming}
 }
 \value{
 Invisibly returns list with cleanup summary
@@ -21,7 +31,4 @@ This function performs cleanup of vintages after data import based on table sett
 and hash comparisons. For tables with keep_vintage = FALSE, it keeps only the most
 recent vintage. For tables with keep_vintage = TRUE, it applies hash comparison
 to determine if older vintages contain unique information worth preserving.
-}
-\details{
-You can also pass a single table_id to process only that table.
 }

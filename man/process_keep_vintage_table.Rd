@@ -13,7 +13,7 @@ process_keep_vintage_table(con, schema, table_id, result)
 
 \item{table_id}{Integer specifying the table to process}
 
-\item{result}{List to store results and errors}
+\item{result}{List to store results}
 }
 \value{
 Updated result list
