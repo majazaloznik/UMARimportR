@@ -22,5 +22,6 @@ if (Sys.getenv("CI") != "true") {
   # to make devtools available in all interactive sessions
   if (interactive()) {
     suppressMessages(require(devtools))
+    suppressMessages(require(testthat))
   }
 }
