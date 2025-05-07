@@ -80,36 +80,3 @@ ensure_colnames_utf8 <- function(df) {
   }
   return(df)
 }
-
-#' Set locale for data operations
-#'
-#' @param locale Character string specifying locale to use
-#' @param category Locale category to set (default: LC_CTYPE)
-#' @return returns a function to restore the previous locale
-#' @export
-set_data_locale <- function(locale = "UTF-8", category = "LC_CTYPE") {
-  old_locale <- Sys.getlocale(category)
-
-  # Handle UTF-8 special case
-  if (locale == "UTF-8") {
-    # Try platform-specific UTF-8 locale variants
-    locales <- if (.Platform$OS.type == "windows") {
-      c("English_United States.UTF-8", "English_United Kingdom.UTF-8")
-    } else {
-      c("en_US.UTF-8", "C.UTF-8")
-    }
-
-    # Try each locale until one works
-    for (loc in locales) {
-      if (tryCatch({Sys.setlocale(category, loc); TRUE}, error = function(e) FALSE)) {
-        break
-      }
-    }
-  } else {
-    # Set specific locale
-    Sys.setlocale(category, locale)
-  }
-
-  # Return function to restore original locale
-  function() Sys.setlocale(category, old_locale)
-}
