@@ -22,7 +22,8 @@ RoxygenNote: 7.3.2
 Imports: 
     DBI (>= 1.2.0),
     RPostgres (>= 1.4.0),
-    dplyr (>= 1.0.0), 
-    purrr (>= 1.0.0)
+    dplyr (>= 1.0.0),
+    purrr (>= 1.0.0),
+    stringr
 Remotes: 
     majazaloznik/UMARaccessR

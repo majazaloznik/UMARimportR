@@ -7,7 +7,7 @@
 insert_prepared_data_points(prep_data, con, schema = "platform")
 }
 \arguments{
-\item{prep_data}{A prepared data object from prepare_surs_data_for_insert}
+\item{prep_data}{A prepared data object from e.g. prepare_surs_data_for_insert}
 
 \item{con}{Database connection}
 

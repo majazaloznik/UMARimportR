@@ -400,7 +400,7 @@ insert_new_vintage <- function(con, df, schema = "platform") {
 #' Generic function to insert prepared data points into the database.
 #' Works with data prepared by SURS-specific or other preparation functions.
 #'
-#' @param prep_data A prepared data object from prepare_surs_data_for_insert
+#' @param prep_data A prepared data object from e.g. prepare_surs_data_for_insert
 #' @param con Database connection
 #' @param schema Schema name
 #'
