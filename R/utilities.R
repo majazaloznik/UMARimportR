@@ -31,21 +31,12 @@ sql_function_call <- function(con, fun_name, args, schema = "platform") {
     args_pattern <- paste(args_pattern, collapse = ", ")
   }
 
-  # Normalize encoding for consistent hashing across platforms
-  normalize_for_comment <- function(x) {
-    if (is.character(x)) {
-      # Convert to ASCII for consistent hashing (not for database storage)
-      x <- iconv(x, from = "UTF-8", to = "ASCII//TRANSLIT", sub = "?")
-    } else if (inherits(x, "integer64")) {
-      as.numeric(x)
-    } else if (inherits(x, "POSIXct")) {
-      format(x, "%Y-%m-%d %H:%M:%S", tz = "UTC")
-    } else {
-      x
-    }
-  }
   # Add comment with args for unique hashing
-  param_values <- sapply(args, normalize_for_comment)
+  param_values <- sapply(args, function(x) {
+    if (inherits(x, "integer64")) return(as.numeric(x))
+    if (inherits(x, "POSIXct")) return(format(x))
+    x
+  })
 
   param_comment <- sprintf(
     "/* Params: %s */",
@@ -89,4 +80,3 @@ ensure_colnames_utf8 <- function(df) {
   }
   return(df)
 }
-
