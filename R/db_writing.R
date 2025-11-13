@@ -533,12 +533,25 @@ insert_prepared_data_points <- function(prep_data, con, schema = "platform") {
 
   # 5. Insert data into permanent tables
   # 5a. Insert periods
-  periods_query <- sprintf(
-    "INSERT INTO %s.period (id, interval_id)
+  if ("interval_id" %in% colnames(prep_data$data)) {
+    # Multi-interval case (Eurostat)
+    periods_query <- sprintf(
+      "INSERT INTO %s.period (id, interval_id)
+      SELECT DISTINCT time, interval_id FROM tmp_prepared_data
+      ON CONFLICT DO NOTHING",
+      schema
+    )
+  } else {
+    # Single interval case (SURS, etc.)
+    periods_query <- sprintf(
+      "INSERT INTO %s.period (id, interval_id)
      SELECT DISTINCT time, '%s' FROM tmp_prepared_data
      ON CONFLICT DO NOTHING",
-    schema, prep_data$interval_id
-  )
+      schema, prep_data$interval_id
+    )
+  }
+
+
 
   # 5b. Insert data points
   datapoints_query <- sprintf(

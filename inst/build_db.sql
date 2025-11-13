@@ -29,6 +29,9 @@ ADD CONSTRAINT unique_sourceid_name UNIQUE (source_id, name);
 INSERT INTO platform.category (id, name, source_id)
                        VALUES (0, 'SiStat', 1);
 
+ALTER TABLE platform.category
+DROP CONSTRAINT unique_sourceid_name;
+
 drop table if exists platform.category_relationship cascade;
 CREATE TABLE platform.category_relationship
 (
